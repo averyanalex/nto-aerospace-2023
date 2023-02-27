@@ -1,5 +1,5 @@
-#define SERVO_PIN 3
-#define BUTTON_PIN 8
+#define SERVO_PIN 44
+#define BUTTON_PIN 45
 
 #include <Servo.h>
 
