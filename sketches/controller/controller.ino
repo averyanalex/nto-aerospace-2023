@@ -4,11 +4,11 @@
 #include <Servo.h>
 
 Servo claw;
-bool up = false;
 
 void setup() {
   pinMode(BUTTON_PIN, INPUT_PULLUP);
   claw.attach(SERVO_PIN);
+  Serial.begin(115200);
 }
 
 
@@ -17,12 +17,13 @@ void loop() {
     while (!digitalRead(BUTTON_PIN)) {
       delay(100);
     }
-    up = !up;
+    Serial.println(1);
   }
 
-  if (up) {
-    claw.write(90);
-  } else {
-    claw.write(0);
+  if (Serial.available()) {
+    int angle = Serial.parseInt();
+    if (angle != 0) {
+      claw.write(angle);
+    }
   }
 }
