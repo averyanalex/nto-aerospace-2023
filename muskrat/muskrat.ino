@@ -22,8 +22,9 @@ void loop() {
 
   if (Serial.available()) {
     int angle = Serial.parseInt();
+    Serial.println(angle);
     if (angle != 0) {
-      claw.write(angle);
+      claw.writeMicroseconds(angle);
     }
   }
 }
