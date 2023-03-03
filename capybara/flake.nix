@@ -13,12 +13,16 @@
         overlays = [ (import rust-overlay) ];
         pkgs = import nixpkgs { inherit system overlays; };
         rustVersion = pkgs.rust-bin.stable.latest.default;
+
+        buildInputs = with pkgs; [ v4l-utils ];
+        nativeBuildInputs = with pkgs; [ libv4l ];
       in
       {
         devShells.default = pkgs.mkShell {
           buildInputs = [
             rustVersion
-          ];
+          ] ++ buildInputs ++ nativeBuildInputs;
+          LD_LIBRARY_PATH = pkgs.lib.makeLibraryPath nativeBuildInputs;
         };
       }
     );
