@@ -11,26 +11,26 @@ pub async fn run_encoder(
     mut cam_rx: broadcast::Receiver<RgbImage>,
     data_tx: broadcast::Sender<Vec<u8>>,
 ) {
+    // Encoder configuration
     let mut enc = EncoderConfig::default();
+
     // Basic settings
-    enc.time_base = Rational { num: 1, den: 10 };
+    enc.time_base = Rational { num: 1, den: 10 }; // 10 FPS
     enc.width = 640;
     enc.height = 480;
-
-    // Birate limit
-    enc.bitrate = 40;
-    enc.min_quantizer = 255;
-
-    // AV1 magic
-    enc.error_resilient = true;
-    enc.speed_settings = SpeedSettings::from_preset(8);
-    // enc.speed_settings.rdo_lookahead_frames = 1;
-    // enc.min_key_frame_interval = 20;
-    // enc.max_key_frame_interval = 50;
-    // enc.low_latency = true;
-    enc.still_picture = false;
-    enc.tiles = 4;
     enc.chroma_sampling = ChromaSampling::Cs444;
+
+    // Raspberry Pi
+    enc.speed_settings = SpeedSettings::from_preset(10);
+    enc.tiles = 4; // 4 cpu
+
+    // Low birate
+    enc.bitrate = 50;
+    enc.min_quantizer = 180;
+
+    // Low latency
+    enc.speed_settings.rdo_lookahead_frames = 1;
+    enc.low_latency = true;
 
     let cfg = Config::new().with_encoder_config(enc).with_threads(4);
 

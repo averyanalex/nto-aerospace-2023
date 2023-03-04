@@ -16,12 +16,12 @@ async fn main() {
     let (camera_tx, camera_rx) = broadcast::channel(1);
     let camera_task = spawn(camera::run_camera(camera_tx));
 
-    let (encoder_tx, encoder_rx) = broadcast::channel(256);
-    let encoder_rx_2 = encoder_tx.subscribe();
+    let (encoder_tx, encoder_radio_rx) = broadcast::channel(32);
+    let encoder_decoder_rx = encoder_tx.subscribe();
     let encoder_task = spawn(encoder::run_encoder(camera_rx, encoder_tx));
 
-    let radio_task = spawn(radio::run_radio(encoder_rx));
-    let decoder_task = spawn(decoder::run_decoder(encoder_rx_2));
+    let radio_task = spawn(radio::run_radio(encoder_radio_rx));
+    let decoder_task = spawn(decoder::run_decoder(encoder_decoder_rx));
 
     join_all(vec![
         muskrat_task,
