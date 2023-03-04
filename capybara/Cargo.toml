@@ -4,11 +4,22 @@ version = "0.1.0"
 edition = "2021"
 
 [dependencies]
+crossbeam = { version = "0.8.2", features = ["crossbeam-channel"] }
+dav1d = "0.9.3"
+dcv-color-primitives = "0.5.2"
+# ac-ffmpeg = "0.18.1"
+# ffmpeg-next = "5.1.1"
 futures = "0.3.26"
-image = "0.24.5"
-# nokhwa = { version = "0.10.3", features = ["input-native"] }
+image = "0.23.14"
+log = "0.4.17"
+# nokhwa = { version = "0.10.3", features = ["input-v4l"] }
+rav1e = "0.6.3"
 rscam = "0.5.5"
 tokio = { version = "1.26.0", features = ["full"] }
+yuv = "0.1.5"
 
-[profile.release]
-lto = true
+[profile.dev.package.rav1e]
+opt-level = 3
+
+# [profile.release]
+# lto = true

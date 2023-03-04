@@ -1,18 +1,34 @@
 use futures::future::join_all;
-use image::RgbImage;
 use tokio::spawn;
-use tokio::sync::{mpsc, watch};
+use tokio::sync::{broadcast, mpsc};
 
 mod camera;
+mod decoder;
+mod encoder;
 mod muskrat;
+mod radio;
 
 #[tokio::main]
 async fn main() {
-    let (set_angle_tx, set_angle_rx) = mpsc::channel::<u8>(1);
-    let musk = spawn(muskrat::run_muskrat(set_angle_rx));
+    let (_, set_angle_rx) = mpsc::channel::<u8>(1);
+    let muskrat_task = spawn(muskrat::run_muskrat(set_angle_rx));
 
-    let (camera_tx, mut camera_rx) = watch::channel(RgbImage::new(32, 32));
-    let camera = spawn(camera::run_camera(camera_tx));
+    let (camera_tx, camera_rx) = broadcast::channel(1);
+    let camera_task = spawn(camera::run_camera(camera_tx));
 
-    join_all(vec![musk, camera]).await;
+    let (encoder_tx, encoder_rx) = broadcast::channel(256);
+    let encoder_rx_2 = encoder_tx.subscribe();
+    let encoder_task = spawn(encoder::run_encoder(camera_rx, encoder_tx));
+
+    let radio_task = spawn(radio::run_radio(encoder_rx));
+    let decoder_task = spawn(decoder::run_decoder(encoder_rx_2));
+
+    join_all(vec![
+        muskrat_task,
+        camera_task,
+        encoder_task,
+        radio_task,
+        decoder_task,
+    ])
+    .await;
 }

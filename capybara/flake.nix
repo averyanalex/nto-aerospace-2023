@@ -14,15 +14,21 @@
         pkgs = import nixpkgs { inherit system overlays; };
         rustVersion = pkgs.rust-bin.stable.latest.default;
 
-        buildInputs = with pkgs; [ v4l-utils ];
-        nativeBuildInputs = with pkgs; [ libv4l ];
+        # ffmpegVersion = pkgs.ffmpeg_5-headless.overrideAttrs (final: prev: {
+        #   libaomSupport = true;
+        # });
+
+        buildInputs = with pkgs; [ libv4l dav1d ];
+        # buildInputs = with pkgs; [ libv4l libclang ] ++ [ ffmpegVersion ];
+        # nativeBuildInputs = with pkgs; [ pkg-config ];
+        nativeBuildInputs = with pkgs; [ nasm pkg-config ];
       in
       {
         devShells.default = pkgs.mkShell {
           buildInputs = [
             rustVersion
           ] ++ buildInputs ++ nativeBuildInputs;
-          LD_LIBRARY_PATH = pkgs.lib.makeLibraryPath nativeBuildInputs;
+          LD_LIBRARY_PATH = pkgs.lib.makeLibraryPath buildInputs;
         };
       }
     );
