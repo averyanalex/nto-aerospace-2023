@@ -4,7 +4,7 @@ use dav1d::Decoder;
 use dav1d::Error::Again;
 use dav1d::PlanarImageComponent;
 use futures::future::join_all;
-use image::{Bgra, ImageBuffer, Rgb};
+use image::{Bgra, ImageBuffer};
 use tokio::sync::broadcast;
 use tokio::task::{spawn, spawn_blocking};
 
