@@ -11,6 +11,9 @@ mod yuvrgb;
 
 #[tokio::main]
 async fn main() {
+    env_logger::Builder::from_env(env_logger::Env::default().default_filter_or("info")).init();
+    log_panics::init();
+
     let (_, set_angle_rx) = mpsc::channel::<u8>(1);
     let muskrat_task = spawn(muskrat::run_muskrat(set_angle_rx));
 
@@ -22,7 +25,15 @@ async fn main() {
     let encoder_task = spawn(encoder::run_encoder(camera_rx, encoder_tx));
 
     let radio_task = spawn(radio::run_radio(encoder_radio_rx));
-    let decoder_task = spawn(decoder::run_decoder(encoder_decoder_rx));
+
+    let (decoded_image_tx, mut decoded_image_rx) = broadcast::channel(8);
+    let decoder_task = spawn(decoder::run_decoder(encoder_decoder_rx, decoded_image_tx));
+
+    let decoded_image_task = spawn(async move {
+        loop {
+            decoded_image_rx.recv().await.unwrap();
+        }
+    });
 
     join_all(vec![
         muskrat_task,
@@ -30,6 +41,7 @@ async fn main() {
         encoder_task,
         radio_task,
         decoder_task,
+        decoded_image_task,
     ])
     .await;
 }
