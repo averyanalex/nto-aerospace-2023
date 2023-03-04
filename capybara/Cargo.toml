@@ -4,11 +4,19 @@ version = "0.1.0"
 edition = "2021"
 
 [dependencies]
-futures = "0.3.26"
-image = "0.24.5"
-# nokhwa = { version = "0.10.3", features = ["input-native"] }
+crossbeam = { version = "0.8.2", features = ["crossbeam-channel"] }
+dav1d = "0.9.3"
+dcv-color-primitives = "0.5.2"
+futures = "0.3"
+image = "0.23"
+rav1e = "0.6.3"
 rscam = "0.5.5"
-tokio = { version = "1.26.0", features = ["full"] }
+tokio = { version = "1.26", features = ["full"] }
+yuv = "0.1.5"
+
+log = "0.4"
+env_logger = "0.10"
+log-panics = { version = "2", features = ["with-backtrace"] }
 
 [profile.release]
 lto = true
