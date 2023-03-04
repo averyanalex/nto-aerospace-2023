@@ -82,8 +82,6 @@ pub async fn run_encoder(
                 },
             }
 
-            // ctx.flush();
-
             // Receive data from encoder
             match ctx.receive_packet() {
                 Ok(pkt) => {

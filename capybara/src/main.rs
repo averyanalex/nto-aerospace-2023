@@ -7,6 +7,7 @@ mod decoder;
 mod encoder;
 mod muskrat;
 mod radio;
+mod yuvrgb;
 
 #[tokio::main]
 async fn main() {
