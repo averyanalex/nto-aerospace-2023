@@ -14,13 +14,7 @@
         pkgs = import nixpkgs { inherit system overlays; };
         rustVersion = pkgs.rust-bin.stable.latest.default;
 
-        # ffmpegVersion = pkgs.ffmpeg_5-headless.overrideAttrs (final: prev: {
-        #   libaomSupport = true;
-        # });
-
         buildInputs = with pkgs; [ libv4l dav1d ];
-        # buildInputs = with pkgs; [ libv4l libclang ] ++ [ ffmpegVersion ];
-        # nativeBuildInputs = with pkgs; [ pkg-config ];
         nativeBuildInputs = with pkgs; [ nasm pkg-config ];
       in
       {
