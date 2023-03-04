@@ -64,7 +64,7 @@ pub async fn run_encoder(
             let planes = vec![r_slice, g_slice, b_slice];
             let mut video_frame = ctx.new_frame();
             for (dst, src) in video_frame.planes.iter_mut().zip(planes) {
-                dst.copy_from_raw_u8(&src, 480, 1);
+                dst.copy_from_raw_u8(&src, 640, 1);
             }
 
             // Send frame to encoder
