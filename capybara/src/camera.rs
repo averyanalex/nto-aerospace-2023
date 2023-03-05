@@ -17,8 +17,8 @@ pub async fn run_camera(camera_tx: broadcast::Sender<RgbImage>) {
         .unwrap();
 
     spawn_blocking(move || loop {
-        camera.capture().unwrap();
-        camera.capture().unwrap();
+        // camera.capture().unwrap();
+        // camera.capture().unwrap();
         let frame = camera.capture().unwrap();
         let decoded_frame = ImageReader::new(Cursor::new(&frame[..]))
             .with_guessed_format()

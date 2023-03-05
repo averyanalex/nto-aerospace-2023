@@ -15,7 +15,7 @@ pub async fn run_encoder(
     let mut enc = EncoderConfig::default();
 
     // Basic settings
-    enc.time_base = Rational { num: 1, den: 10 }; // 10 FPS
+    enc.time_base = Rational { num: 1, den: 30 }; // 10 FPS
     enc.width = 640;
     enc.height = 480;
     enc.chroma_sampling = ChromaSampling::Cs444;
@@ -25,8 +25,9 @@ pub async fn run_encoder(
     enc.tiles = 4; // 4 cpu
 
     // Low birate
-    enc.bitrate = 50;
-    enc.min_quantizer = 180;
+    enc.bitrate = 64;
+    enc.quantizer = 100;
+    enc.min_quantizer = 255; // 180
 
     // Low latency
     enc.speed_settings.rdo_lookahead_frames = 1;
