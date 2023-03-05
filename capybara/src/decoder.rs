@@ -1,8 +1,6 @@
 use crate::yuvrgb::yuv_to_bgra;
 use crossbeam::channel::unbounded;
-use dav1d::Decoder;
-use dav1d::Error::Again;
-use dav1d::PlanarImageComponent;
+use dav1d::{Decoder, Error::Again, PlanarImageComponent};
 use futures::future::join_all;
 use image::RgbImage;
 use tokio::sync::broadcast;
@@ -39,7 +37,9 @@ pub async fn run_decoder(
             let image = RgbImage::from_raw(640, 480, rgb_buf).unwrap();
             image_tx.send(image).unwrap();
         };
-        let mut decoder = Decoder::new().unwrap();
+        let mut decoder_settings = dav1d::Settings::new();
+        decoder_settings.set_max_frame_delay(1);
+        let mut decoder = Decoder::with_settings(&decoder_settings).unwrap();
         loop {
             let data = pkt_rx.recv().unwrap();
 
