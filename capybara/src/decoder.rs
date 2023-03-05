@@ -4,7 +4,7 @@ use dav1d::Decoder;
 use dav1d::Error::Again;
 use dav1d::PlanarImageComponent;
 use futures::future::join_all;
-use image::{Bgra, DynamicImage, ImageBuffer, RgbImage};
+use image::RgbImage;
 use tokio::sync::broadcast;
 use tokio::task::{spawn, spawn_blocking};
 
@@ -34,12 +34,10 @@ pub async fn run_decoder(
                 picture.stride(PlanarImageComponent::V) as usize,
             ];
 
-            let bgra_buf = yuv_to_bgra(&src_buf, strides);
+            let rgb_buf = yuv_to_bgra(&src_buf, strides);
 
-            let image_bgra =
-                ImageBuffer::<Bgra<u8>, Vec<u8>>::from_raw(640, 480, bgra_buf.to_vec()).unwrap();
-            let image_rgb = DynamicImage::ImageBgra8(image_bgra).into_rgb8();
-            image_tx.send(image_rgb).unwrap();
+            let image = RgbImage::from_raw(640, 480, rgb_buf).unwrap();
+            image_tx.send(image).unwrap();
         };
         let mut decoder = Decoder::new().unwrap();
         loop {
