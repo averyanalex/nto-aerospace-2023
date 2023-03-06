@@ -1,17 +1,20 @@
-use anyhow::{Error, Result};
+use anyhow::Result;
 use borsh::BorshDeserialize;
 use borsh::BorshSerialize;
-use capybara::decoder;
-use capybara::photosaver;
-use capybara::{PacketToMaster, PacketToSlave};
 use futures::SinkExt;
 use futures::StreamExt;
 use log::*;
-use tokio::{spawn, sync::broadcast, task::JoinHandle};
+use tokio::sync::broadcast;
+use tokio::task::JoinSet;
 use tokio_tungstenite::{connect_async, tungstenite::protocol::Message};
 
+use capybara::decoder;
+use capybara::photosaver;
+use capybara::wait_tasks;
+use capybara::{PacketToMaster, PacketToSlave};
+
 #[tokio::main]
-async fn main() -> Result<(), Error> {
+async fn main() -> Result<()> {
     env_logger::Builder::from_env(env_logger::Env::default().default_filter_or("info")).init();
     log_panics::init();
 
@@ -27,10 +30,11 @@ async fn main() -> Result<(), Error> {
     let (photo_data_tx, photo_data_rx) = broadcast::channel(32);
     let (image_tx, mut image_rx) = broadcast::channel(1);
 
-    let encoder_task = spawn(decoder::run_decoder(encoder_rx, image_tx));
-    let photosaver_task = spawn(photosaver::run_photosaver(photo_data_rx));
+    let mut tasks = JoinSet::<Result<()>>::new();
+    tasks.spawn(decoder::run_decoder(encoder_rx, image_tx));
+    tasks.spawn(photosaver::run_photosaver(photo_data_rx));
 
-    let send_task: JoinHandle<Result<()>> = tokio::spawn(async move {
+    tasks.spawn(async move {
         loop {
             tokio::time::sleep(tokio::time::Duration::from_secs(5)).await;
             let pkt = PacketToSlave::TakePhoto;
@@ -40,7 +44,7 @@ async fn main() -> Result<(), Error> {
             };
         }
     });
-    let recv_task: JoinHandle<Result<()>> = tokio::spawn(async move {
+    tasks.spawn(async move {
         while let Some(Ok(msg)) = receiver.next().await {
             match msg {
                 Message::Binary(b) => {
@@ -62,7 +66,7 @@ async fn main() -> Result<(), Error> {
         }
         Ok(())
     });
-    let image_task: JoinHandle<Result<()>> = tokio::spawn(async move {
+    tasks.spawn(async move {
         loop {
             let img = match image_rx.recv().await {
                 Ok(i) => i,
@@ -76,11 +80,6 @@ async fn main() -> Result<(), Error> {
         }
     });
 
-    recv_task.await??;
-    send_task.await??;
-    encoder_task.await??;
-    photosaver_task.await??;
-    image_task.await??;
-
+    wait_tasks(tasks).await;
     Ok(())
 }

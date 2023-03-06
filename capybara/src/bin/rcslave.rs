@@ -2,9 +2,8 @@ use anyhow::Result;
 use borsh::{BorshDeserialize, BorshSerialize};
 use image::RgbImage;
 use log::*;
-use tokio::spawn;
 use tokio::sync::{broadcast, mpsc, watch};
-use tokio::task::JoinHandle;
+use tokio::task::JoinSet;
 
 use capybara::camera;
 use capybara::encoder;
@@ -13,6 +12,7 @@ use capybara::phototaker;
 use capybara::radio;
 use capybara::ros;
 use capybara::servo;
+use capybara::wait_tasks;
 use capybara::ws;
 use capybara::{Odometry, Velocity};
 use capybara::{PacketToMaster, PacketToSlave};
@@ -46,20 +46,21 @@ async fn main() -> Result<()> {
         angular: 0.0,
     });
 
-    let ros_task = spawn(ros::run_ros(odometry_tx, velocity_rx));
-    let muskrat_task = spawn(muskrat::run_muskrat(set_raw_angle_rx, button_tx));
-    let servo_task = spawn(servo::run_servo(angle_rx, set_raw_angle_tx));
-    let ws_task = spawn(ws::run_ws(radio_up_tx_video.clone(), radio_down_tx.clone()));
-    let radio_task = spawn(radio::run_radio(radio_up_rx, radio_down_tx));
-    let encoder_task = spawn(encoder::run_encoder(camera_rx, encoder_tx));
-    let phototaker_task = spawn(phototaker::run_phototaker(
+    let mut tasks = JoinSet::<Result<()>>::new();
+    tasks.spawn(ros::run_ros(odometry_tx, velocity_rx));
+    tasks.spawn(muskrat::run_muskrat(set_raw_angle_rx, button_tx));
+    tasks.spawn(servo::run_servo(angle_rx, set_raw_angle_tx));
+    tasks.spawn(ws::run_ws(radio_up_tx_video.clone(), radio_down_tx.clone()));
+    tasks.spawn(radio::run_radio(radio_up_rx, radio_down_tx));
+    tasks.spawn(encoder::run_encoder(camera_rx, encoder_tx));
+    tasks.spawn(phototaker::run_phototaker(
         photo_request_rx,
         camera_tx.subscribe(),
         photo_data_tx,
     ));
-    let camera_task = spawn(camera::run_camera(camera_tx));
+    tasks.spawn(camera::run_camera(camera_tx));
 
-    let command_handler_task: JoinHandle<Result<()>> = spawn(async move {
+    tasks.spawn(async move {
         loop {
             let cmd_bytes = match radio_down_rx.recv().await {
                 Ok(d) => d,
@@ -85,7 +86,7 @@ async fn main() -> Result<()> {
         }
     });
 
-    let odometry_sender_task: JoinHandle<Result<()>> = spawn(async move {
+    tasks.spawn(async move {
         while odometry_rx.changed().await.is_ok() {
             let o = (*odometry_rx.borrow()).clone();
             let pkt = PacketToMaster::Odometry(o);
@@ -93,7 +94,7 @@ async fn main() -> Result<()> {
         }
         Ok(())
     });
-    let video_sender_task: JoinHandle<Result<()>> = spawn(async move {
+    tasks.spawn(async move {
         loop {
             let video_data = match encoder_rx.recv().await {
                 Ok(d) => d,
@@ -107,7 +108,7 @@ async fn main() -> Result<()> {
             let _ = radio_up_tx_video.send(pkt.try_to_vec()?);
         }
     });
-    let photo_sender_task: JoinHandle<Result<()>> = spawn(async move {
+    tasks.spawn(async move {
         loop {
             let photo_data = match photo_data_rx.recv().await {
                 Ok(d) => d,
@@ -122,18 +123,6 @@ async fn main() -> Result<()> {
         }
     });
 
-    camera_task.await??;
-    command_handler_task.await??;
-    encoder_task.await??;
-    muskrat_task.await??;
-    odometry_sender_task.await??;
-    photo_sender_task.await??;
-    phototaker_task.await??;
-    radio_task.await??;
-    ros_task.await??;
-    servo_task.await??;
-    video_sender_task.await??;
-    ws_task.await??;
-
+    wait_tasks(tasks).await;
     Ok(())
 }

@@ -1,11 +1,12 @@
 use anyhow::Result;
 use log::*;
-use tokio::spawn;
 use tokio::sync::{broadcast, mpsc, watch};
 
 use capybara::muskrat;
 use capybara::ros;
+use capybara::wait_tasks;
 use capybara::{Odometry, Velocity};
+use tokio::task::JoinSet;
 
 #[tokio::main]
 async fn main() -> Result<()> {
@@ -24,8 +25,9 @@ async fn main() -> Result<()> {
         angular: 0.0,
     });
 
-    let ros_task = spawn(ros::run_ros(odometry_tx, velocity_rx));
-    let muskrat_task = spawn(muskrat::run_muskrat(set_raw_angle_rx, button_tx));
+    let mut tasks = JoinSet::<Result<()>>::new();
+    tasks.spawn(ros::run_ros(odometry_tx, velocity_rx));
+    tasks.spawn(muskrat::run_muskrat(set_raw_angle_rx, button_tx));
 
     loop {
         match button_rx.recv().await {
@@ -33,7 +35,7 @@ async fn main() -> Result<()> {
             Err(_) => break,
             Ok(_) => {}
         }
-        
+
         info!("starting 1m trip");
 
         let last_pos = (*odometry_rx.borrow()).clone();
@@ -66,8 +68,6 @@ async fn main() -> Result<()> {
         }
     }
 
-    ros_task.await??;
-    muskrat_task.await??;
-
+    wait_tasks(tasks).await;
     Ok(())
 }
