@@ -31,6 +31,3 @@ anyhow = "1.0"
 borsh = "0.10"
 crossbeam = { version = "0.8", features = ["crossbeam-channel"] }
 rand = "0.8"
-
-[profile.release]
-lto = true
