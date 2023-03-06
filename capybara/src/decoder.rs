@@ -50,9 +50,7 @@ pub async fn run_decoder(
                 Some(i) => i,
                 None => bail!("image container too small"),
             };
-            if image_tx.send(image).is_err() {
-                return Ok(());
-            };
+            let _ = image_tx.send(image);
             Ok(())
         };
         let mut decoder_settings = dav1d::Settings::new();

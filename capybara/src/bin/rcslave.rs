@@ -64,28 +64,22 @@ async fn main() -> Result<()> {
             let cmd_bytes = match radio_down_rx.recv().await {
                 Ok(d) => d,
                 Err(broadcast::error::RecvError::Lagged(l)) => {
-                    error!("lagged {}", l);
+                    error!("lagged for {l} packets");
                     continue;
                 }
                 Err(_) => return Ok(()),
             };
-            debug!("Got cmd len = {}", cmd_bytes.len());
+            debug!("got cmd len = {}", cmd_bytes.len());
             let cmd = PacketToSlave::try_from_slice(&cmd_bytes)?;
             match cmd {
                 PacketToSlave::TakePhoto => {
-                    if photo_request_tx.send(()).await.is_err() {
-                        return Ok(());
-                    }
+                    let _ = photo_request_tx.send(()).await;
                 }
                 PacketToSlave::SetVelocity(v) => {
-                    if velocity_tx.send(v).is_err() {
-                        return Ok(());
-                    }
+                    let _ = velocity_tx.send(v);
                 }
                 PacketToSlave::SetAngle(a) => {
-                    if angle_tx.send(a).is_err() {
-                        return Ok(());
-                    }
+                    let _ = angle_tx.send(a);
                 }
             }
         }
@@ -95,9 +89,7 @@ async fn main() -> Result<()> {
         while odometry_rx.changed().await.is_ok() {
             let o = (*odometry_rx.borrow()).clone();
             let pkt = PacketToMaster::Odometry(o);
-            if radio_up_tx_odometry.send(pkt.try_to_vec()?).is_err() {
-                return Ok(());
-            };
+            let _ = radio_up_tx_odometry.send(pkt.try_to_vec()?);
         }
         Ok(())
     });
@@ -106,15 +98,13 @@ async fn main() -> Result<()> {
             let video_data = match encoder_rx.recv().await {
                 Ok(d) => d,
                 Err(broadcast::error::RecvError::Lagged(l)) => {
-                    error!("lagged {}", l);
+                    error!("lagged for {l} video packets");
                     continue;
                 }
                 Err(_) => return Ok(()),
             };
             let pkt = PacketToMaster::Video(video_data);
-            if radio_up_tx_video.send(pkt.try_to_vec()?).is_err() {
-                return Ok(());
-            };
+            let _ = radio_up_tx_video.send(pkt.try_to_vec()?);
         }
     });
     let photo_sender_task: JoinHandle<Result<()>> = spawn(async move {
@@ -122,15 +112,13 @@ async fn main() -> Result<()> {
             let photo_data = match photo_data_rx.recv().await {
                 Ok(d) => d,
                 Err(broadcast::error::RecvError::Lagged(l)) => {
-                    error!("lagged {}", l);
+                    error!("lagged for {l} photos");
                     continue;
                 }
                 Err(_) => return Ok(()),
             };
             let pkt = PacketToMaster::Photo(photo_data);
-            if radio_up_tx_photo.send(pkt.try_to_vec()?).is_err() {
-                return Ok(());
-            };
+            let _ = radio_up_tx_photo.send(pkt.try_to_vec()?);
         }
     });
 

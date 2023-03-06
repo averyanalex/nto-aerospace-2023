@@ -8,7 +8,7 @@ use axum::{
     routing::get,
     Extension, Router,
 };
-use futures::{StreamExt, SinkExt};
+use futures::{SinkExt, StreamExt};
 use log::*;
 use std::net::SocketAddr;
 use std::sync::Arc;
@@ -71,9 +71,7 @@ async fn handle_socket(socket: WebSocket, channels_spawner: Extension<Arc<Channe
                 Message::Close(_) => return Ok(()),
                 Message::Binary(bin) => {
                     debug!("got from ws len = {}", bin.len());
-                    if down_tx.send(bin).is_err() {
-                        return Ok(());
-                    };
+                    let _ = down_tx.send(bin);
                 }
                 Message::Text(t) => {
                     info!("got message: {}", t);
@@ -88,7 +86,7 @@ async fn handle_socket(socket: WebSocket, channels_spawner: Extension<Arc<Channe
             let data = match up_rx.recv().await {
                 Ok(d) => d,
                 Err(broadcast::error::RecvError::Lagged(l)) => {
-                    error!("lagged {}", l);
+                    error!("lagged for {l} packets");
                     continue;
                 }
                 Err(_) => return Ok(()),

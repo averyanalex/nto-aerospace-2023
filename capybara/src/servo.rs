@@ -18,7 +18,7 @@ pub async fn run_servo(set_angle_rx: watch::Receiver<f64>, set_raw_angle_tx: mps
         } else {
             angle -= MAX_SPEED * dt;
         };
-        set_raw_angle_tx.send(angle).await.unwrap();
+        let _ = set_raw_angle_tx.send(angle).await;
         sleep(Duration::from_millis(10)).await;
     }
 

@@ -23,9 +23,7 @@ pub async fn run_camera(camera_tx: watch::Sender<RgbImage>) -> Result<()> {
             .with_guessed_format()?
             .decode()?
             .into_rgb8();
-        if let Err(_) = camera_tx.send(decoded_frame) {
-            return Ok(());
-        };
+        let _ = camera_tx.send(decoded_frame);
     })
     .await?
 }

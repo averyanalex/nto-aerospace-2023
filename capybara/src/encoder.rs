@@ -104,9 +104,7 @@ pub async fn run_encoder(
             // Receive data from encoder
             match ctx.receive_packet() {
                 Ok(pkt) => {
-                    if data_tx.send(pkt.data).is_err() {
-                        return Ok(());
-                    };
+                    let _ = data_tx.send(pkt.data);
                 }
                 Err(e) => match e {
                     EncoderStatus::LimitReached => {

@@ -23,9 +23,7 @@ pub async fn run_phototaker(
         })
         .await?;
 
-        if photo_data_tx.send(webp?).is_err() {
-            return Ok(());
-        };
+        let _ = photo_data_tx.send(webp?);
     }
     Ok(())
 }

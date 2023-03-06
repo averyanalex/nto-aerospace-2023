@@ -12,7 +12,7 @@ pub async fn run_photosaver(mut data_rx: broadcast::Receiver<Vec<u8>>) -> Result
         let data = match data_rx.recv().await {
             Ok(d) => d,
             Err(broadcast::error::RecvError::Lagged(l)) => {
-                error!("decoder lagged for {l} packets");
+                error!("lagged for {l} packets");
                 continue;
             }
             Err(_) => return Ok(()),

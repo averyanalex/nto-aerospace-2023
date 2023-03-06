@@ -47,14 +47,10 @@ async fn main() -> Result<(), Error> {
                     let cmd = PacketToMaster::try_from_slice(&b)?;
                     match cmd {
                         PacketToMaster::Video(vd) => {
-                            if encoder_tx.send(vd).is_err() {
-                                return Ok(());
-                            };
+                            let _ = encoder_tx.send(vd);
                         }
                         PacketToMaster::Photo(pd) => {
-                            if photo_data_tx.send(pd).is_err() {
-                                return Ok(());
-                            };
+                            let _ = photo_data_tx.send(pd);
                         }
                         PacketToMaster::Odometry(o) => {
                             info!("got odometry x = {}, y = {}, theta = {}", o.x, o.y, o.theta);
@@ -71,7 +67,7 @@ async fn main() -> Result<(), Error> {
             let img = match image_rx.recv().await {
                 Ok(i) => i,
                 Err(broadcast::error::RecvError::Lagged(l)) => {
-                    error!("decoder lagged for {l} packets");
+                    error!("lagged for {l} frames");
                     continue;
                 }
                 Err(_) => return Ok(()),

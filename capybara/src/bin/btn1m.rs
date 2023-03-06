@@ -33,6 +33,8 @@ async fn main() -> Result<()> {
             Err(_) => break,
             Ok(_) => {}
         }
+        
+        info!("starting 1m trip");
 
         let last_pos = (*odometry_rx.borrow()).clone();
 

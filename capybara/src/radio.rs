@@ -10,7 +10,7 @@ pub async fn run_radio(
         let data_to_send = match send_rx.recv().await {
             Ok(d) => d,
             Err(broadcast::error::RecvError::Lagged(l)) => {
-                error!("lagged {}", l);
+                error!("lagged for {l} packets");
                 continue;
             }
             Err(_) => return Ok(()),
