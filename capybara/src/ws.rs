@@ -35,10 +35,10 @@ impl ChannelsSpawner {
 }
 
 pub async fn run_ws(
-    up_tx: broadcast::Sender<Vec<u8>>,
-    down_tx: broadcast::Sender<Vec<u8>>,
+    send_tx: broadcast::Sender<Vec<u8>>,
+    receive_tx: broadcast::Sender<Vec<u8>>,
 ) -> Result<()> {
-    let channels_spawner = Arc::new(ChannelsSpawner::new(up_tx, down_tx));
+    let channels_spawner = Arc::new(ChannelsSpawner::new(send_tx, receive_tx));
 
     let app = Router::new()
         .route("/", get(ws_handler))

@@ -3,11 +3,11 @@ use log::*;
 use tokio::sync::broadcast;
 
 pub async fn run_radio(
-    mut up_rx: broadcast::Receiver<Vec<u8>>,
-    _: broadcast::Sender<Vec<u8>>,
+    mut send_rx: broadcast::Receiver<Vec<u8>>,
+    _receive_tx: broadcast::Sender<Vec<u8>>,
 ) -> Result<()> {
     loop {
-        let data_to_send = match up_rx.recv().await {
+        let data_to_send = match send_rx.recv().await {
             Ok(d) => d,
             Err(broadcast::error::RecvError::Lagged(l)) => {
                 error!("lagged {}", l);
