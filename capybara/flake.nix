@@ -14,7 +14,16 @@
         pkgs = import nixpkgs { inherit system overlays; };
         rustVersion = pkgs.rust-bin.stable.latest.default;
 
-        buildInputs = with pkgs; [ libv4l dav1d ];
+        buildInputs = with pkgs; [
+          libv4l
+          dav1d
+
+          wayland
+          alsa-lib
+          udev
+          libxkbcommon
+          vulkan-loader
+        ];
         nativeBuildInputs = with pkgs; [ nasm pkg-config ];
       in
       {

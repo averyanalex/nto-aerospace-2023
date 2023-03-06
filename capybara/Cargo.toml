@@ -4,19 +4,33 @@ version = "0.1.0"
 edition = "2021"
 
 [dependencies]
-crossbeam = { version = "0.8.2", features = ["crossbeam-channel"] }
+# async
+tokio = { version = "1.26", features = ["full"] }
+futures = "0.3"
+
+# images
+image = { version = "0.24", features = ["webp-encoder"] }
+rscam = "0.5.5"
+
+# av1
+rav1e = "0.6.3"
 dav1d = "0.9.3"
 dcv-color-primitives = "0.5.2"
-futures = "0.3"
-image = "0.24"
-rav1e = "0.6.3"
-rscam = "0.5.5"
-tokio = { version = "1.26", features = ["full"] }
-yuv = "0.1.5"
 
+# websockets
+tokio-tungstenite = "0.18"
+axum = { version = "0.6", features = ["ws"] }
+
+# logging
 log = "0.4"
 env_logger = "0.10"
 log-panics = { version = "2", features = ["with-backtrace"] }
+
+# misc
+anyhow = "1.0"
+borsh = "0.10"
+crossbeam = { version = "0.8", features = ["crossbeam-channel"] }
+rand = "0.8"
 
 [profile.release]
 lto = true

@@ -1,16 +1,17 @@
+use anyhow::{bail, Error, Result};
 use crossbeam::channel::unbounded;
 use futures::future::join_all;
 use image::{Rgb, RgbImage};
 use log::*;
 use rav1e::config::SpeedSettings;
 use rav1e::prelude::*;
-use tokio::sync::broadcast;
-use tokio::task::{spawn, spawn_blocking};
+use tokio::sync::{broadcast, watch};
+use tokio::task::{spawn, spawn_blocking, JoinHandle};
 
 pub async fn run_encoder(
-    mut cam_rx: broadcast::Receiver<RgbImage>,
+    mut cam_rx: watch::Receiver<RgbImage>,
     data_tx: broadcast::Sender<Vec<u8>>,
-) {
+) -> Result<()> {
     // Encoder configuration
     let mut enc = EncoderConfig::default();
 
@@ -31,25 +32,37 @@ pub async fn run_encoder(
     // Low latency
     enc.speed_settings.rdo_lookahead_frames = 1;
     enc.low_latency = true;
+    enc.max_key_frame_interval = 50;
 
     let cfg = Config::new().with_encoder_config(enc).with_threads(4);
 
-    let (frame_tx, frame_rx) = unbounded::<RgbImage>();
-    let frame_task = spawn(async move {
-        loop {
-            frame_tx.send(cam_rx.recv().await.unwrap()).unwrap();
+    let (frame_tx, frame_rx) = unbounded();
+    let frame_task: JoinHandle<Result<(), Error>> = spawn(async move {
+        while cam_rx.changed().await.is_ok() {
+            let img = (*cam_rx.borrow()).clone();
+            if frame_tx.send(img).is_err() {
+                break;
+            }
         }
+        Ok(())
     });
 
-    let encoder_task = spawn_blocking(move || {
-        let mut ctx: Context<u8> = cfg.new_context().unwrap();
+    let encoder_task: JoinHandle<Result<()>> = spawn_blocking(move || {
+        let mut ctx: Context<u8> = cfg.new_context()?;
         loop {
             // Drop old frames and receive one
             while frame_rx.len() > 3 {
-                warn!("dropping frame");
-                frame_rx.recv().unwrap();
+                warn!("dropping all frames");
+                while frame_rx.len() > 0 {
+                    if frame_rx.recv().is_err() {
+                        return Ok(());
+                    };
+                }
             }
-            let frame = frame_rx.recv().unwrap();
+            let frame = match frame_rx.recv() {
+                Ok(f) => f,
+                Err(_) => return Ok(()),
+            };
 
             // Convert RgbImage to Frame
             let mut r_slice: Vec<u8> = vec![];
@@ -77,7 +90,7 @@ pub async fn run_encoder(
                         warn!("unable to append frame to the internal queue");
                     }
                     _ => {
-                        panic!("unable to send frame");
+                        bail!("unable to send frame");
                     }
                 },
             }
@@ -85,7 +98,9 @@ pub async fn run_encoder(
             // Receive data from encoder
             match ctx.receive_packet() {
                 Ok(pkt) => {
-                    data_tx.send(pkt.data).unwrap();
+                    if data_tx.send(pkt.data).is_err() {
+                        return Ok(());
+                    };
                 }
                 Err(e) => match e {
                     EncoderStatus::LimitReached => {
@@ -94,14 +109,15 @@ pub async fn run_encoder(
                     EncoderStatus::Encoded => debug!("read thread: Encoded"),
                     EncoderStatus::NeedMoreData => debug!("read thread: Need more data"),
                     _ => {
-                        warn!("read thread: Unable to receive packet");
+                        bail!("unable to receive packet");
                     }
                 },
-            }
+            };
         }
     });
 
     join_all(vec![frame_task, encoder_task]).await;
+    Ok(())
 }
 
 fn clamp(val: f32) -> u8 {

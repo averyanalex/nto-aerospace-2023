@@ -1,33 +1,31 @@
+use anyhow::Result;
 use image::io::Reader as ImageReader;
 use image::RgbImage;
 use std::io::Cursor;
-use tokio::sync::broadcast;
+use tokio::sync::watch;
 use tokio::task::spawn_blocking;
 
-pub async fn run_camera(camera_tx: broadcast::Sender<RgbImage>) {
-    let mut camera = rscam::new("/dev/video0").unwrap();
+pub async fn run_camera(camera_tx: watch::Sender<RgbImage>) -> Result<()> {
+    let mut camera = rscam::new("/dev/video0")?;
 
-    camera
-        .start(&rscam::Config {
-            interval: (1, 30),
-            resolution: (640, 480),
-            format: b"MJPG",
-            ..Default::default()
-        })
-        .unwrap();
+    camera.start(&rscam::Config {
+        interval: (1, 30),
+        resolution: (640, 480),
+        format: b"MJPG",
+        ..Default::default()
+    })?;
 
     spawn_blocking(move || loop {
-        camera.capture().unwrap();
-        camera.capture().unwrap();
-        let frame = camera.capture().unwrap();
+        camera.capture()?;
+        camera.capture()?;
+        let frame = camera.capture()?;
         let decoded_frame = ImageReader::new(Cursor::new(&frame[..]))
-            .with_guessed_format()
-            .unwrap()
-            .decode()
-            .unwrap()
+            .with_guessed_format()?
+            .decode()?
             .into_rgb8();
-        camera_tx.send(decoded_frame).unwrap();
+        if let Err(_) = camera_tx.send(decoded_frame) {
+            return Ok(());
+        };
     })
-    .await
-    .unwrap();
+    .await?
 }
