@@ -1,3 +1,4 @@
+use anyhow::Result;
 use dcp::{ColorSpace, ImageFormat, PixelFormat};
 use dcv_color_primitives as dcp;
 
@@ -19,7 +20,7 @@ const RGB_FORMAT: ImageFormat = ImageFormat {
     num_planes: 1,
 };
 
-pub fn yuv_to_bgra(src_yuv_buf: &Vec<&[u8]>, yuv_strides: &[usize; 3]) -> Vec<u8> {
+pub fn yuv_to_bgra(src_yuv_buf: &Vec<&[u8]>, yuv_strides: &[usize; 3]) -> Result<Vec<u8>> {
     dcp::initialize();
 
     let mut bgra_buf: Vec<_> = vec![0u8; 640 * 480 * 4];
@@ -34,8 +35,7 @@ pub fn yuv_to_bgra(src_yuv_buf: &Vec<&[u8]>, yuv_strides: &[usize; 3]) -> Vec<u8
         &BGRA_FORMAT,
         Some(bgra_strides),
         dst_bgra_buf,
-    )
-    .unwrap();
+    )?;
 
     let src_bgra_buf = &[&bgra_buf[..]];
     let mut rgb_buf: Vec<_> = vec![0u8; 640 * 480 * 3];
@@ -49,7 +49,6 @@ pub fn yuv_to_bgra(src_yuv_buf: &Vec<&[u8]>, yuv_strides: &[usize; 3]) -> Vec<u8
         &RGB_FORMAT,
         None,
         dst_rgb_buf,
-    )
-    .unwrap();
-    rgb_buf
+    )?;
+    Ok(rgb_buf)
 }
