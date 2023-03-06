@@ -4,6 +4,7 @@ use image::RgbImage;
 use log::*;
 use tokio::spawn;
 use tokio::sync::{broadcast, mpsc, watch};
+use tokio::task::JoinHandle;
 
 use capybara::camera;
 use capybara::encoder;
@@ -11,17 +12,18 @@ use capybara::muskrat;
 use capybara::phototaker;
 use capybara::radio;
 use capybara::ros;
+use capybara::servo;
 use capybara::ws;
 use capybara::{Odometry, Velocity};
 use capybara::{PacketToMaster, PacketToSlave};
-use tokio::task::JoinHandle;
 
 #[tokio::main]
 async fn main() -> Result<()> {
     env_logger::Builder::from_env(env_logger::Env::default().default_filter_or("info")).init();
     log_panics::init();
 
-    let (_, set_angle_rx) = mpsc::channel::<u8>(1);
+    let (set_raw_angle_tx, set_raw_angle_rx) = mpsc::channel::<f64>(1);
+    let (angle_tx, angle_rx) = watch::channel(0.0);
     let (camera_tx, camera_rx) = watch::channel(RgbImage::new(640, 480));
     let (photo_request_tx, photo_request_rx) = mpsc::channel(1);
     let (photo_data_tx, mut photo_data_rx) = broadcast::channel(4);
@@ -44,7 +46,8 @@ async fn main() -> Result<()> {
     });
 
     let ros_task = spawn(ros::run_ros(odometry_tx, velocity_rx));
-    let muskrat_task = spawn(muskrat::run_muskrat(set_angle_rx));
+    let muskrat_task = spawn(muskrat::run_muskrat(set_raw_angle_rx));
+    let servo_task = spawn(servo::run_servo(angle_rx, set_raw_angle_tx));
     let ws_task = spawn(ws::run_ws(radio_up_tx_video.clone(), radio_down_tx.clone()));
     let radio_task = spawn(radio::run_radio(radio_up_rx, radio_down_tx));
     let encoder_task = spawn(encoder::run_encoder(camera_rx, encoder_tx));
@@ -75,6 +78,11 @@ async fn main() -> Result<()> {
                 }
                 PacketToSlave::SetVelocity(v) => {
                     if velocity_tx.send(v).is_err() {
+                        return Ok(());
+                    }
+                }
+                PacketToSlave::SetAngle(a) => {
+                    if angle_tx.send(a).is_err() {
                         return Ok(());
                     }
                 }
@@ -129,12 +137,14 @@ async fn main() -> Result<()> {
     command_handler_task.await??;
     encoder_task.await??;
     muskrat_task.await??;
+    odometry_sender_task.await??;
     photo_sender_task.await??;
     phototaker_task.await??;
-    ros_task.await??;
     radio_task.await??;
-    ws_task.await??;
-    odometry_sender_task.await??;
+    ros_task.await??;
+    servo_task.await??;
     video_sender_task.await??;
+    ws_task.await??;
+
     Ok(())
 }

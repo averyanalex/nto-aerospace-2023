@@ -1,10 +1,11 @@
+use anyhow::Result;
 use tokio::sync::{mpsc, watch};
 use tokio::time::{sleep, Duration, Instant};
 
 const MAX_SPEED: f64 = 5.0;
 //const ACCEL: f64 = 2.0;
 
-pub async fn run_servo(set_angle_rx: watch::Receiver<f64>, set_raw_angle_tx: mpsc::Sender<f64>) {
+pub async fn run_servo(set_angle_rx: watch::Receiver<f64>, set_raw_angle_tx: mpsc::Sender<f64>) -> Result<()> {
     let mut angle: f64 = 10.0;
     // let mut speed: f64 = 0.0;
     let mut last_run = Instant::now();
@@ -13,9 +14,9 @@ pub async fn run_servo(set_angle_rx: watch::Receiver<f64>, set_raw_angle_tx: mps
         let dt = (Instant::now() - last_run).as_secs_f64();
         last_run = Instant::now();
         if angle + MAX_SPEED * dt < target {
-            angle = angle + MAX_SPEED * dt;
+            angle += MAX_SPEED * dt;
         } else {
-            angle = angle - MAX_SPEED * dt;
+            angle -= MAX_SPEED * dt;
         };
         set_raw_angle_tx.send(angle).await.unwrap();
         sleep(Duration::from_millis(10)).await;

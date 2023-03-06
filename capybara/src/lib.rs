@@ -6,6 +6,7 @@ pub mod photosaver;
 pub mod phototaker;
 pub mod radio;
 pub mod ros;
+pub mod servo;
 pub mod ws;
 pub mod yuvrgb;
 
@@ -28,6 +29,7 @@ pub struct Velocity {
 pub enum PacketToSlave {
     TakePhoto,
     SetVelocity(Velocity),
+    SetAngle(f64),
 }
 
 #[derive(BorshSerialize, BorshDeserialize, PartialEq, Debug)]
