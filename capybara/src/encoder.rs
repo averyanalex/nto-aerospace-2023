@@ -53,7 +53,7 @@ pub async fn run_encoder(
             // Drop old frames and receive one
             while frame_rx.len() > 3 {
                 warn!("dropping all frames");
-                while frame_rx.len() > 0 {
+                while frame_rx.len() > 1 {
                     if frame_rx.recv().is_err() {
                         return Ok(());
                     };
