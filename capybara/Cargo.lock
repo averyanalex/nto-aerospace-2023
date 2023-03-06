@@ -2155,8 +2155,7 @@ checksum = "456c603be3e8d448b072f410900c09faf164fbce2d480456f50eea6e25f9c848"
 [[package]]
 name = "ros_message"
 version = "0.1.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "f69cab6b7fca75189133e79e3ce6ece5e32049b3808184e0720cda932af2a8c0"
+source = "git+https://github.com/adnanademovic/rosrust.git#dbb156ec2fe6679b404d91b512c4d6ee990972b8"
 dependencies = [
  "array-init",
  "hex",
@@ -2172,8 +2171,7 @@ dependencies = [
 [[package]]
 name = "rosrust"
 version = "0.9.10"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "293a3f920cbe51530bf27ce421423a6187e41e79f29c225ad1075e4058ab38d9"
+source = "git+https://github.com/adnanademovic/rosrust.git#dbb156ec2fe6679b404d91b512c4d6ee990972b8"
 dependencies = [
  "byteorder",
  "colored",
@@ -2196,8 +2194,7 @@ dependencies = [
 [[package]]
 name = "rosrust_codegen"
 version = "0.9.6"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "152b6795be28c58d6d1f183499957e3b9b79e288f9fe0fc339a33f8d89662fcb"
+source = "git+https://github.com/adnanademovic/rosrust.git#dbb156ec2fe6679b404d91b512c4d6ee990972b8"
 dependencies = [
  "error-chain 0.12.4",
  "hex",
@@ -2212,8 +2209,7 @@ dependencies = [
 [[package]]
 name = "rosrust_msg"
 version = "0.1.6"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "63666545686a08085fe9167816c21c7edafe12b1a055f3852cb279be9d05e227"
+source = "git+https://github.com/adnanademovic/rosrust.git#dbb156ec2fe6679b404d91b512c4d6ee990972b8"
 dependencies = [
  "rosrust",
 ]

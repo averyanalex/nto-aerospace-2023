@@ -33,5 +33,5 @@ crossbeam = { version = "0.8", features = ["crossbeam-channel"] }
 rand = "0.8"
 
 # ros
-rosrust = "0.9"
-rosrust_msg = "0.1"
+rosrust = { git = "https://github.com/adnanademovic/rosrust.git" }
+rosrust_msg = { git = "https://github.com/adnanademovic/rosrust.git" }
