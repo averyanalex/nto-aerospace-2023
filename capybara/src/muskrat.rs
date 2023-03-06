@@ -1,7 +1,10 @@
 use anyhow::Result;
-use tokio::sync::mpsc;
+use tokio::sync::{broadcast, mpsc};
 
-pub async fn run_muskrat(mut set_angle_rx: mpsc::Receiver<f64>) -> Result<()> {
+pub async fn run_muskrat(
+    mut set_angle_rx: mpsc::Receiver<f64>,
+    _button_tx: broadcast::Sender<()>,
+) -> Result<()> {
     while let Some(angle) = set_angle_rx.recv().await {
         println!("New angle = {}", angle);
     }

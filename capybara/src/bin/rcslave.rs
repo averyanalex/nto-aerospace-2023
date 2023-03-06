@@ -26,6 +26,7 @@ async fn main() -> Result<()> {
     let (angle_tx, angle_rx) = watch::channel(0.0);
     let (camera_tx, camera_rx) = watch::channel(RgbImage::new(640, 480));
     let (photo_request_tx, photo_request_rx) = mpsc::channel(1);
+    let (button_tx, _) = broadcast::channel(1);
     let (photo_data_tx, mut photo_data_rx) = broadcast::channel(4);
     let (encoder_tx, mut encoder_rx) = broadcast::channel(32);
 
@@ -46,7 +47,7 @@ async fn main() -> Result<()> {
     });
 
     let ros_task = spawn(ros::run_ros(odometry_tx, velocity_rx));
-    let muskrat_task = spawn(muskrat::run_muskrat(set_raw_angle_rx));
+    let muskrat_task = spawn(muskrat::run_muskrat(set_raw_angle_rx, button_tx));
     let servo_task = spawn(servo::run_servo(angle_rx, set_raw_angle_tx));
     let ws_task = spawn(ws::run_ws(radio_up_tx_video.clone(), radio_down_tx.clone()));
     let radio_task = spawn(radio::run_radio(radio_up_rx, radio_down_tx));

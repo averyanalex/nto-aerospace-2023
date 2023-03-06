@@ -19,6 +19,12 @@ pub struct Odometry {
     pub theta: f64,
 }
 
+impl Odometry {
+    pub fn distance_to(&self, other: &Self) -> f64 {
+        ((self.x - other.x).powi(2) + (self.y - other.y).powi(2)).sqrt()
+    }
+}
+
 #[derive(BorshSerialize, BorshDeserialize, PartialEq, Debug, Clone)]
 pub struct Velocity {
     pub linear: f64,
