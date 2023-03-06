@@ -16,7 +16,7 @@ pub async fn run_encoder(
     let mut enc = EncoderConfig::default();
 
     // Basic settings
-    enc.time_base = Rational { num: 1, den: 10 }; // 10 FPS
+    enc.time_base = Rational { num: 1, den: 5 }; // 5 FPS
     enc.width = 640;
     enc.height = 480;
     enc.chroma_sampling = ChromaSampling::Cs444;
@@ -38,10 +38,16 @@ pub async fn run_encoder(
 
     let (frame_tx, frame_rx) = unbounded();
     let frame_task: JoinHandle<Result<(), Error>> = spawn(async move {
+        let mut send_this_time = true;
         while cam_rx.changed().await.is_ok() {
             let img = (*cam_rx.borrow()).clone();
-            if frame_tx.send(img).is_err() {
-                break;
+            if send_this_time {
+                if frame_tx.send(img).is_err() {
+                    break;
+                }
+                send_this_time = false;
+            } else {
+                send_this_time = true;
             }
         }
         Ok(())
@@ -51,8 +57,8 @@ pub async fn run_encoder(
         let mut ctx: Context<u8> = cfg.new_context()?;
         loop {
             // Drop old frames and receive one
-            while frame_rx.len() > 3 {
-                warn!("dropping all frames");
+            while frame_rx.len() > 2 {
+                warn!("dropping frames");
                 while frame_rx.len() > 1 {
                     if frame_rx.recv().is_err() {
                         return Ok(());
