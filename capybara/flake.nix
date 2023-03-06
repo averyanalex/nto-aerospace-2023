@@ -25,7 +25,7 @@
           libxkbcommon
           vulkan-loader
         ];
-        nativeBuildInputs = with pkgs; [ nasm gas pkg-config ];
+        nativeBuildInputs = with pkgs; [ nasm pkg-config ];
       in
       {
         devShells.default = pkgs.mkShell {
