@@ -44,7 +44,7 @@ pub async fn run_ws(
         .route("/", get(ws_handler))
         .layer(Extension(channels_spawner));
 
-    let addr = SocketAddr::from(([127, 0, 0, 1], 8264));
+    let addr = SocketAddr::from(([0, 0, 0, 0], 8264));
     axum::Server::bind(&addr)
         .serve(app.into_make_service_with_connect_info::<SocketAddr>())
         .await?;
