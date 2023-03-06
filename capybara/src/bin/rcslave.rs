@@ -5,11 +5,14 @@ use log::*;
 use tokio::spawn;
 use tokio::sync::{broadcast, mpsc, watch};
 
+use capybara::camera;
 use capybara::encoder;
 use capybara::muskrat;
 use capybara::phototaker;
 use capybara::radio;
-use capybara::{camera, ws};
+use capybara::ros;
+use capybara::ws;
+use capybara::{Odometry, Velocity};
 use capybara::{PacketToMaster, PacketToSlave};
 use tokio::task::JoinHandle;
 
@@ -26,9 +29,21 @@ async fn main() -> Result<()> {
 
     let (radio_up_tx_video, radio_up_rx) = broadcast::channel(32);
     let radio_up_tx_photo = radio_up_tx_video.clone();
+    let radio_up_tx_odometry = radio_up_tx_video.clone();
 
     let (radio_down_tx, mut radio_down_rx) = broadcast::channel(32);
 
+    let (odometry_tx, mut odometry_rx) = watch::channel(Odometry {
+        x: 0.0,
+        y: 0.0,
+        theta: 0.0,
+    });
+    let (velocity_tx, velocity_rx) = watch::channel(Velocity {
+        linear: 0.0,
+        angular: 0.0,
+    });
+
+    let ros_task = spawn(ros::run_ros(odometry_tx, velocity_rx));
     let muskrat_task = spawn(muskrat::run_muskrat(set_angle_rx));
     let ws_task = spawn(ws::run_ws(radio_up_tx_video.clone(), radio_down_tx.clone()));
     let radio_task = spawn(radio::run_radio(radio_up_rx, radio_down_tx));
@@ -58,10 +73,25 @@ async fn main() -> Result<()> {
                         return Ok(());
                     }
                 }
+                PacketToSlave::SetVelocity(v) => {
+                    if velocity_tx.send(v).is_err() {
+                        return Ok(());
+                    }
+                }
             }
         }
     });
 
+    let odometry_sender_task: JoinHandle<Result<()>> = spawn(async move {
+        while odometry_rx.changed().await.is_ok() {
+            let o = (*odometry_rx.borrow()).clone();
+            let pkt = PacketToMaster::Odometry(o);
+            if radio_up_tx_odometry.send(pkt.try_to_vec()?).is_err() {
+                return Ok(());
+            };
+        }
+        Ok(())
+    });
     let video_sender_task: JoinHandle<Result<()>> = spawn(async move {
         loop {
             let video_data = match encoder_rx.recv().await {
@@ -72,7 +102,7 @@ async fn main() -> Result<()> {
                 }
                 Err(_) => return Ok(()),
             };
-            let pkt = PacketToMaster::VideoData(video_data);
+            let pkt = PacketToMaster::Video(video_data);
             if radio_up_tx_video.send(pkt.try_to_vec()?).is_err() {
                 return Ok(());
             };
@@ -88,7 +118,7 @@ async fn main() -> Result<()> {
                 }
                 Err(_) => return Ok(()),
             };
-            let pkt = PacketToMaster::PhotoData(photo_data);
+            let pkt = PacketToMaster::Photo(photo_data);
             if radio_up_tx_photo.send(pkt.try_to_vec()?).is_err() {
                 return Ok(());
             };
@@ -101,8 +131,10 @@ async fn main() -> Result<()> {
     muskrat_task.await??;
     photo_sender_task.await??;
     phototaker_task.await??;
+    ros_task.await??;
     radio_task.await??;
     ws_task.await??;
+    odometry_sender_task.await??;
     video_sender_task.await??;
     Ok(())
 }

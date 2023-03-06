@@ -5,17 +5,34 @@ pub mod muskrat;
 pub mod photosaver;
 pub mod phototaker;
 pub mod radio;
+pub mod ros;
 pub mod ws;
 pub mod yuvrgb;
 
 use borsh::{BorshDeserialize, BorshSerialize};
 
+#[derive(BorshSerialize, BorshDeserialize, PartialEq, Debug, Clone)]
+pub struct Odometry {
+    pub x: f64,
+    pub y: f64,
+    pub theta: f64,
+}
+
+#[derive(BorshSerialize, BorshDeserialize, PartialEq, Debug, Clone)]
+pub struct Velocity {
+    pub linear: f64,
+    pub angular: f64,
+}
+
 #[derive(BorshSerialize, BorshDeserialize, PartialEq, Debug)]
 pub enum PacketToSlave {
     TakePhoto,
+    SetVelocity(Velocity),
 }
+
 #[derive(BorshSerialize, BorshDeserialize, PartialEq, Debug)]
 pub enum PacketToMaster {
-    VideoData(Vec<u8>),
-    PhotoData(Vec<u8>),
+    Video(Vec<u8>),
+    Photo(Vec<u8>),
+    Odometry(Odometry),
 }

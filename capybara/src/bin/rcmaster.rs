@@ -15,7 +15,7 @@ async fn main() -> Result<(), Error> {
     env_logger::Builder::from_env(env_logger::Env::default().default_filter_or("info")).init();
     log_panics::init();
 
-    let ws_stream = match connect_async("ws://127.0.0.1:8264").await {
+    let ws_stream = match connect_async("ws://10.8.0.2:8264").await {
         Ok((stream, _)) => stream,
         Err(_) => {
             return Ok(());
@@ -46,15 +46,18 @@ async fn main() -> Result<(), Error> {
                 Message::Binary(b) => {
                     let cmd = PacketToMaster::try_from_slice(&b)?;
                     match cmd {
-                        PacketToMaster::VideoData(vd) => {
+                        PacketToMaster::Video(vd) => {
                             if encoder_tx.send(vd).is_err() {
                                 return Ok(());
                             };
                         }
-                        PacketToMaster::PhotoData(pd) => {
+                        PacketToMaster::Photo(pd) => {
                             if photo_data_tx.send(pd).is_err() {
                                 return Ok(());
                             };
+                        }
+                        PacketToMaster::Odometry(o) => {
+                            info!("got odometry x = {}, y = {}, theta = {}", o.x, o.y, o.theta);
                         }
                     }
                 }
