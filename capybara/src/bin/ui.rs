@@ -8,9 +8,12 @@ use bevy::{
         },
     },
 };
-use crossbeam::channel::{Receiver, Sender, TryRecvError};
+use tokio::sync::mpsc::{Receiver, Sender, error::TryRecvError};
 
-fn main() {
+#[tokio::main]
+async fn main() {
+    // todo: spawn tasks here
+
     App::new()
         .add_plugins(DefaultPlugins)
         .add_startup_system(setup)
@@ -83,8 +86,8 @@ fn setup(
         ..default()
     });
 
-    let (_tx1, rx1) = crossbeam::channel::bounded(1);
-    let (tx2, _rx2) = crossbeam::channel::bounded(1);
+    let (_tx1, rx1) = tokio::sync::mpsc::channel(1);
+    let (tx2, _rx2) = tokio::sync::mpsc::channel(1);
 
     commands.insert_resource(RemoteControl {
         rx: rx1,
@@ -93,7 +96,7 @@ fn setup(
     });
 }
 
-fn draw_system(rc: Res<RemoteControl>, mut images: ResMut<Assets<Image>>) {
+fn draw_system(mut rc: ResMut<RemoteControl>, mut images: ResMut<Assets<Image>>) {
     match rc.rx.try_recv() {
         Ok(data) => {
             let image = images.get_mut(&rc.image_handle).unwrap();
@@ -124,7 +127,7 @@ fn move_system(rc: Res<RemoteControl>, key_input: Res<Input<KeyCode>>) {
         }
     }
     if move_command.drive.is_some() || move_command.rotate.is_some() {
-        if let Err(err) = rc.tx.send_timeout(move_command, Duration::from_millis(100)) {
+        if let Err(err) = rc.tx.blocking_send(move_command) {
             warn!("Can't send MoveCommand: {}", err); // TODO: just ignore it?
         }
     }
