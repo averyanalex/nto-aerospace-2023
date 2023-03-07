@@ -31,6 +31,7 @@ anyhow = "1.0"
 borsh = "0.10"
 crossbeam = { version = "0.8", features = ["crossbeam-channel"] }
 rand = "0.8"
+tokio-serial = "5.4.4"
 
 # ros
 rosrust = { git = "https://github.com/adnanademovic/rosrust.git" }
