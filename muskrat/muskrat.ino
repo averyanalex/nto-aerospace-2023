@@ -17,14 +17,14 @@ void loop() {
     while (!digitalRead(BUTTON_PIN)) {
       delay(100);
     }
-    Serial.println(1);
+    Serial.write(0x07);
   }
 
   if (Serial.available()) {
-    int angle = Serial.parseInt();
-    Serial.println(angle);
-    if (angle != 0) {
-      claw.writeMicroseconds(angle);
-    }
+//    int angle = Serial.parseInt();
+//    Serial.println(angle);
+//    if (angle != 0) {
+//      claw.writeMicroseconds(angle);
+//    }
   }
 }
