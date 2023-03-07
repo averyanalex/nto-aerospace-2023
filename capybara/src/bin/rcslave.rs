@@ -87,10 +87,16 @@ async fn main() -> Result<()> {
     });
 
     tasks.spawn(async move {
+        let mut skipped = 4u8;
         while odometry_rx.changed().await.is_ok() {
-            let o = (*odometry_rx.borrow()).clone();
-            let pkt = PacketToMaster::Odometry(o);
-            let _ = radio_up_tx_odometry.send(pkt.try_to_vec()?);
+            if skipped > 3 {
+                skipped = 0;
+                let o = (*odometry_rx.borrow()).clone();
+                let pkt = PacketToMaster::Odometry(o);
+                let _ = radio_up_tx_odometry.send(pkt.try_to_vec()?);
+            } else {
+                skipped += 1;
+            }
         }
         Ok(())
     });
