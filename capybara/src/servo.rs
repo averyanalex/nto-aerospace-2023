@@ -5,7 +5,10 @@ use tokio::time::{sleep, Duration, Instant};
 const MAX_SPEED: f64 = 5.0;
 //const ACCEL: f64 = 2.0;
 
-pub async fn run_servo(set_angle_rx: watch::Receiver<f64>, set_raw_angle_tx: mpsc::Sender<f64>) -> Result<()> {
+pub async fn run_servo(
+    set_angle_rx: watch::Receiver<f64>,
+    set_raw_angle_tx: mpsc::Sender<f64>,
+) -> Result<()> {
     let mut angle: f64 = 10.0;
     // let mut speed: f64 = 0.0;
     let mut last_run = Instant::now();

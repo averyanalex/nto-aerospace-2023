@@ -1,20 +1,24 @@
-use std::time::Duration;
-
 use bevy::{
     prelude::*,
-    render::{
-        render_resource::{
-            Extent3d, TextureDescriptor, TextureDimension, TextureFormat, TextureUsages,
-        },
+    render::render_resource::{
+        Extent3d, TextureDescriptor, TextureDimension, TextureFormat, TextureUsages,
     },
 };
-use tokio::sync::mpsc::{Receiver, Sender, error::TryRecvError};
+use tokio::sync::mpsc::{error::TryRecvError, Receiver, Sender};
 
 #[tokio::main]
 async fn main() {
     // todo: spawn tasks here
 
+    let (_tx1, rx1) = tokio::sync::mpsc::channel(1);
+    let (tx2, _rx2) = tokio::sync::mpsc::channel(1);
+
     App::new()
+        .insert_resource(RemoteControl {
+            rx: rx1,
+            tx: tx2,
+            image_handle: None,
+        })
         .add_plugins(DefaultPlugins)
         .add_startup_system(setup)
         .add_systems((move_system, draw_system))
@@ -25,7 +29,7 @@ async fn main() {
 struct RemoteControl {
     rx: Receiver<Vec<u8>>,
     tx: Sender<MoveCommand>,
-    image_handle: Handle<Image>,
+    image_handle: Option<Handle<Image>>,
 }
 
 #[derive(Default)]
@@ -46,10 +50,7 @@ enum Rotate {
     Stop,
 }
 
-fn setup(
-    mut commands: Commands,
-    mut images: ResMut<Assets<Image>>,
-) {
+fn setup(mut commands: Commands, mut images: ResMut<Assets<Image>>, mut rc: ResMut<RemoteControl>) {
     let size = Extent3d {
         width: 640,
         height: 480,
@@ -86,27 +87,20 @@ fn setup(
         ..default()
     });
 
-    let (_tx1, rx1) = tokio::sync::mpsc::channel(1);
-    let (tx2, _rx2) = tokio::sync::mpsc::channel(1);
-
-    commands.insert_resource(RemoteControl {
-        rx: rx1,
-        tx: tx2,
-        image_handle
-    });
+    rc.image_handle = Some(image_handle);
 }
 
 fn draw_system(mut rc: ResMut<RemoteControl>, mut images: ResMut<Assets<Image>>) {
     match rc.rx.try_recv() {
         Ok(data) => {
-            let image = images.get_mut(&rc.image_handle).unwrap();
+            let image_handle = rc.image_handle.as_ref().unwrap();
+            let image = images.get_mut(image_handle).unwrap();
             image.data = data;
-        },
+        }
         Err(TryRecvError::Disconnected) => error!("Image channel is disconected."),
         _ => {}
     }
 }
-
 
 fn move_system(rc: Res<RemoteControl>, key_input: Res<Input<KeyCode>>) {
     let mut move_command = MoveCommand::default();
@@ -116,14 +110,14 @@ fn move_system(rc: Res<RemoteControl>, key_input: Res<Input<KeyCode>>) {
             KeyCode::S => move_command.drive = Some(Drive::Backward),
             KeyCode::A => move_command.rotate = Some(Rotate::Left),
             KeyCode::D => move_command.rotate = Some(Rotate::Right),
-            _ => {},
+            _ => {}
         }
     }
     for key in key_input.get_just_released() {
         match key {
             KeyCode::W | KeyCode::S => move_command.drive = Some(Drive::Stop),
             KeyCode::A | KeyCode::D => move_command.rotate = Some(Rotate::Stop),
-            _ => {},
+            _ => {}
         }
     }
     if move_command.drive.is_some() || move_command.rotate.is_some() {
