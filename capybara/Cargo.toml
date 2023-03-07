@@ -37,6 +37,14 @@ tokio-serial = "5.4.4"
 rosrust = { git = "https://github.com/adnanademovic/rosrust.git" }
 rosrust_msg = { git = "https://github.com/adnanademovic/rosrust.git" }
 
+bevy = { version = "0.10", features = ["dynamic_linking"] }
+
+[profile.dev]
+opt-level = 1
+
+[profile.dev.package."*"]
+opt-level = 3
+
 [profile.release]
 lto = "thin"
 codegen-units = 1
