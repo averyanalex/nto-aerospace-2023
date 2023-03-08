@@ -156,7 +156,7 @@ async fn main() -> Result<()> {
                         match stage {
                             Init => stage = Driving,
                             Driving => {
-                                vy = (x - 0.8) / 100.0;
+                                vy = (x - 0.8) / 5.0;
                                 vx = 0.01;
                                return (vx, vy, false)
                             }
@@ -165,7 +165,7 @@ async fn main() -> Result<()> {
                     } else {
                         match stage {
                             Init => {
-                                vy = 0.01;
+                                vy = 0.05;
                                 return (vx, vy, false)
                             }
                             Driving => {
@@ -252,8 +252,8 @@ fn get_circle_pos(h: i32, w: i32, mut vec: Vec<u8>) -> Result<Option<Circle>> {
     let mut a = Mat::default();
     core::in_range(
         &hsv,
-        &core::Scalar::new(30.0, 0.0, 0.0, 0.0), // TODO: color
-        &core::Scalar::new(235.0, 255.0, 255.0, 0.0),
+        &core::Scalar::new(80.0, 200.0, 200.0, 0.0), // TODO: color
+        &core::Scalar::new(120.0, 255.0, 255.0, 0.0),
         &mut a,
     )?;
     let mut b = Mat::default();
