@@ -7,8 +7,6 @@ use tokio::{
 };
 use tokio_serial::{SerialPort, SerialPortBuilderExt};
 
-const RADIO_PORT: &str =
-    "/dev/serial/by-path/platform-fd500000.pcie-pci-0000:01:00.0-usb-0:1.4:1.0-port0";
 const GET_CONFIG_CMD: [u8; 3] = [0xAA, 0xFA, 0x01];
 const SET_CONFIG_CMD: [u8; 18] = [
     0xAA, 0xFA, 0x03, // set config command
@@ -26,11 +24,12 @@ const SET_CONFIG_CMD: [u8; 18] = [
 ];
 
 pub async fn run_radio(
+    port_path: &str,
     mut send_rx: broadcast::Receiver<Vec<u8>>,
     _receive_tx: broadcast::Sender<Vec<u8>>,
 ) -> Result<()> {
     if true {
-        let mut port = tokio_serial::new(RADIO_PORT, 9600).open_native_async()?;
+        let mut port = tokio_serial::new(port_path, 9600).open_native_async()?;
         port.set_exclusive(true)?;
         port.write_data_terminal_ready(true)?;
 
@@ -60,7 +59,7 @@ pub async fn run_radio(
         }
     }
 
-    let mut port = tokio_serial::new(RADIO_PORT, 115200).open_native_async()?;
+    let mut port = tokio_serial::new(port_path, 115200).open_native_async()?;
     port.set_exclusive(true)?;
     port.write_data_terminal_ready(false)?;
 

@@ -16,7 +16,11 @@ async fn main() {
 
     let mut tasks = JoinSet::<Result<()>>::new();
     tasks.spawn(ws::run_ws(up_tx.clone(), down_tx));
-    tasks.spawn(radio::run_radio(down_rx, up_tx));
+    tasks.spawn(radio::run_radio(
+        "/dev/serial/by-path/platform-fd500000.pcie-pci-0000:01:00.0-usb-0:1.4:1.0-port0",
+        down_rx,
+        up_tx,
+    ));
 
     wait_tasks(tasks).await;
 }

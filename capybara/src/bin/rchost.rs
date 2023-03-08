@@ -51,7 +51,11 @@ async fn main() -> Result<()> {
     tasks.spawn(muskrat::run_muskrat(set_raw_angle_rx, button_tx));
     tasks.spawn(servo::run_servo(angle_rx, set_raw_angle_tx));
     tasks.spawn(ws::run_ws(radio_up_tx_video.clone(), radio_down_tx.clone()));
-    tasks.spawn(radio::run_radio(radio_up_rx, radio_down_tx));
+    tasks.spawn(radio::run_radio(
+        "/dev/serial/by-path/platform-fd500000.pcie-pci-0000:01:00.0-usb-0:1.2:1.0-port0",
+        radio_up_rx,
+        radio_down_tx,
+    ));
     tasks.spawn(encoder::run_encoder(camera_rx, encoder_tx));
     tasks.spawn(phototaker::run_phototaker(
         photo_request_rx,
