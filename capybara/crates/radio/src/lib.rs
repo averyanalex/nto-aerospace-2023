@@ -19,7 +19,7 @@ const SET_CONFIG_CMD: [u8; 18] = [
     1,    // 433 MHz RF Band
     8,    // 115200 RF Rate
     7,    // +20 dBm RF Power
-    8,    // 115200 Serial transmission rate
+    7,    // 57600 Serial transmission rate
     2,    // 8 bits data bits
     1,    // 1 bits stop bits
     1,    // no parity
@@ -65,7 +65,7 @@ pub async fn run_radio(
     }
 
     let port = Arc::new(Mutex::new(
-        tokio_serial::new(port_path, 115200).open_native_async()?,
+        tokio_serial::new(port_path, 57600).open_native_async()?,
     ));
 
     port.lock().await.set_exclusive(true)?;
