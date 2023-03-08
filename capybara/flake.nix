@@ -26,6 +26,24 @@
           udev
           libxkbcommon
           vulkan-loader
+          
+          zlib
+
+          # bevy x11
+          # xlibsWrapper
+          freetype
+          fontconfig
+          xorg.xorgproto
+          xorg.libX11
+          xorg.libXt
+          xorg.libXft
+          xorg.libXext
+          xorg.libSM
+          xorg.libICE
+          # /xlibsWrapper
+          xorg.libXcursor
+          xorg.libXrandr
+          xorg.libXi
         ];
         nativeBuildInputs = with pkgs; [
           nasm
