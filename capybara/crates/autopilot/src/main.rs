@@ -4,6 +4,7 @@ use image::RgbImage;
 use itertools::Itertools;
 use log::*;
 use opencv::{core, features2d, highgui, imgproc, prelude::*, types, videoio};
+use std::sync::{Arc, Mutex};
 use tokio::sync::watch::Sender;
 use tokio::sync::{broadcast, mpsc, watch};
 use tokio::task::spawn_blocking;
@@ -138,32 +139,36 @@ async fn main() -> Result<()> {
     // });
 
     let _ = button_rx.recv().await;
-    info!("button pressed");
+й    info!("button pressed");
 
     tasks.spawn(async move {
         use AutopilotStage::*;
-        let mut stage = Init;
+        let mut stage = Arc::new(Mutex::new(Init));
         while camera_rx.changed().await.is_ok() {
-            let img = (*camera_rx.borrow()).clone();;
+            let img = (*camera_rx.borrow()).clone();
             let (w, h) = (img.width() as i32, img.height() as i32);
             let img_vec = img.as_raw().clone();
+            let stage_clone = stage.clone();
             let (vx, vy, b) = spawn_blocking(move || {
                 let mut vx = 0.;
                 let mut vy = 0.;
                 let circle = get_circle_pos(h, w, img_vec);
                 if let Ok(circle) = circle {
                     if let Some(Circle { x, y, r }) = circle {
-                        match stage {
-                            Init => stage = Driving,
+                        match *stage_clone.lock().unwrap() {
+                            Init => {
+                                let mut st = stage_clone.lock().unwrap();
+                                *st = Driving
+                            }
                             Driving => {
                                 vy = (x - 0.8) / 5.0;
                                 vx = 0.01;
-                               return (vx, vy, false)
+                                return (vx, vy, false);
                             }
                             _ => {}
                         }
                     } else {
-                        match stage {
+                        match *stage_clone.lock().unwrap() {
                             Init => {
                                 vy = 0.05;
                                 return (vx, vy, false)
@@ -171,7 +176,8 @@ async fn main() -> Result<()> {
                             Driving => {
                                 vy = 0.0;
                                 vx = 0.0;
-                                stage = Blindly;
+                                let mut st = stage_clone.lock().unwrap();
+                                *st = Blindly;
                                 return (vx, vy, true);
                             }
                             _ => {}
@@ -196,7 +202,6 @@ async fn main() -> Result<()> {
     wait_tasks(tasks).await;
     Ok(())
 }
-
 
 struct Circle {
     x: f32,
