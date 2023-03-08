@@ -1,11 +1,16 @@
 use anyhow::Result;
 use log::*;
+use std::sync::Arc;
+use tokio::sync::Mutex;
+use tokio::task::JoinSet;
 use tokio::time::{sleep, Duration};
 use tokio::{
     io::{AsyncReadExt, AsyncWriteExt},
     sync::broadcast,
 };
 use tokio_serial::{SerialPort, SerialPortBuilderExt};
+
+use common::wait_tasks;
 
 const GET_CONFIG_CMD: [u8; 3] = [0xAA, 0xFA, 0x01];
 const SET_CONFIG_CMD: [u8; 18] = [
@@ -26,7 +31,7 @@ const SET_CONFIG_CMD: [u8; 18] = [
 pub async fn run_radio(
     port_path: &str,
     mut send_rx: broadcast::Receiver<Vec<u8>>,
-    _receive_tx: broadcast::Sender<Vec<u8>>,
+    receive_tx: broadcast::Sender<Vec<u8>>,
 ) -> Result<()> {
     if true {
         let mut port = tokio_serial::new(port_path, 9600).open_native_async()?;
@@ -59,30 +64,54 @@ pub async fn run_radio(
         }
     }
 
-    let mut port = tokio_serial::new(port_path, 115200).open_native_async()?;
-    port.set_exclusive(true)?;
-    port.write_data_terminal_ready(false)?;
+    let port = Arc::new(Mutex::new(
+        tokio_serial::new(port_path, 115200).open_native_async()?,
+    ));
+
+    port.lock().await.set_exclusive(true)?;
+    port.lock().await.write_data_terminal_ready(false)?;
 
     sleep(Duration::from_secs(3)).await;
 
-    while port.bytes_to_read()? > 0 {
+    while port.lock().await.bytes_to_read()? > 0 {
         warn!("reading trash byte");
-        port.read_exact(&mut [0u8]).await?;
+        port.lock().await.read_exact(&mut [0u8]).await?;
     }
 
-    loop {
-        let data_to_send = match send_rx.recv().await {
-            Ok(d) => d,
-            Err(broadcast::error::RecvError::Lagged(l)) => {
-                error!("lagged for {l} packets");
-                continue;
-            }
-            Err(_) => return Ok(()),
-        };
-        debug!("sending {} bytes to radio", data_to_send.len());
-        port.write_u32(data_to_send.len());
-        // if down_tx.send(data_to_send).is_err() {
-        //     return Ok(());
-        // };
-    }
+    let rec_port = port.clone();
+
+    let mut tasks = JoinSet::<Result<()>>::new();
+
+    tasks.spawn(async move {
+        loop {
+            let data_to_send = match send_rx.recv().await {
+                Ok(d) => d,
+                Err(broadcast::error::RecvError::Lagged(l)) => {
+                    error!("lagged for {l} packets");
+                    continue;
+                }
+                Err(_) => return Ok(()),
+            };
+            debug!("sending {} bytes to radio", data_to_send.len());
+            port.lock()
+                .await
+                .write_u32(data_to_send.len() as u32)
+                .await?;
+            port.lock().await.write_all(&data_to_send).await?;
+        }
+    });
+
+    tasks.spawn(async move {
+        loop {
+            let buf_len = rec_port.lock().await.read_u32().await?;
+            let mut buf: Vec<u8> = vec![0; buf_len as usize];
+            debug!("receiving {} bytes from radio", buf_len);
+            rec_port.lock().await.read_exact(&mut buf).await?;
+            let _ = receive_tx.send(buf);
+        }
+    });
+
+    wait_tasks(tasks).await;
+
+    Ok(())
 }
