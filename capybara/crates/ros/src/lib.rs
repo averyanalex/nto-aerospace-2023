@@ -1,5 +1,5 @@
-use proto::{Odometry, Velocity};
 use anyhow::{bail, Result};
+use proto::{Odometry, Velocity};
 use tokio::sync::watch;
 use tokio::task::spawn_blocking;
 
@@ -38,14 +38,14 @@ pub async fn run_ros(
             let velocity = (*velocity_rx.borrow()).clone();
             let velocity_msg = rosrust_msg::geometry_msgs::Twist {
                 linear: rosrust_msg::geometry_msgs::Vector3 {
-                    x: 0.0,
-                    y: 0.0,
-                    z: velocity.angular,
-                },
-                angular: rosrust_msg::geometry_msgs::Vector3 {
                     x: velocity.linear,
                     y: 0.0,
                     z: 0.0,
+                },
+                angular: rosrust_msg::geometry_msgs::Vector3 {
+                    x: 0.0,
+                    y: 0.0,
+                    z: velocity.angular,
                 },
             };
             match velocity_pub.send(velocity_msg) {

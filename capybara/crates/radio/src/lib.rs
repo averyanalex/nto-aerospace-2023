@@ -103,11 +103,15 @@ pub async fn run_radio(
 
     tasks.spawn(async move {
         loop {
-            let buf_len = rec_port.lock().await.read_u32().await?;
-            let mut buf: Vec<u8> = vec![0; buf_len as usize];
-            debug!("receiving {} bytes from radio", buf_len);
-            rec_port.lock().await.read_exact(&mut buf).await?;
-            let _ = receive_tx.send(buf);
+            if rec_port.lock().await.bytes_to_read()? > 0 {
+                let buf_len = rec_port.lock().await.read_u32().await?;
+                let mut buf: Vec<u8> = vec![0; buf_len as usize];
+                debug!("receiving {} bytes from radio", buf_len);
+                rec_port.lock().await.read_exact(&mut buf).await?;
+                let _ = receive_tx.send(buf);
+            } else {
+                sleep(Duration::from_millis(20)).await;
+            }
         }
     });
 
