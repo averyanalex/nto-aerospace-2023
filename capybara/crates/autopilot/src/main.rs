@@ -139,7 +139,7 @@ async fn main() -> Result<()> {
     // });
 
     let _ = button_rx.recv().await;
-й    info!("button pressed");
+    info!("button pressed");
 
     tasks.spawn(async move {
         use AutopilotStage::*;
