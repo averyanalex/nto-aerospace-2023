@@ -80,6 +80,7 @@ pub async fn run_radio(
             Err(_) => return Ok(()),
         };
         debug!("sending {} bytes to radio", data_to_send.len());
+        port.write_u32(data_to_send.len());
         // if down_tx.send(data_to_send).is_err() {
         //     return Ok(());
         // };

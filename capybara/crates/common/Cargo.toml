@@ -5,7 +5,9 @@ edition = "2021"
 
 [dependencies]
 anyhow = "1.0"
+env_logger = "0.10"
 log = "0.4"
+log-panics = { version = "2", features = ["with-backtrace"] }
 tokio = { version = "1.26", features = ["full"] }
 
 proto = { path = "../proto" }
