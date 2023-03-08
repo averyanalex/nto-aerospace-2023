@@ -1,0 +1,9 @@
+[package]
+name = "muskrat"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+anyhow = "1.0"
+tokio = { version = "1.26", features = ["full"] }
+tokio-serial = "5.4.4"

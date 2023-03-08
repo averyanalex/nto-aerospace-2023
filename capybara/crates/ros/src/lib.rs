@@ -1,4 +1,4 @@
-use crate::{Odometry, Velocity};
+use proto::{Odometry, Velocity};
 use anyhow::{bail, Result};
 use tokio::sync::watch;
 use tokio::task::spawn_blocking;
@@ -16,7 +16,7 @@ pub async fn run_ros(
         Ok(p) => p,
         Err(e) => bail!("can't create publisher to cmd_vel: {e}"),
     };
-    let velocity_rate = rosrust::rate(30.0);
+    let velocity_rate = rosrust::rate(10.0);
 
     let _odometry_subscriber = match rosrust::subscribe(
         "odom_pose2d",

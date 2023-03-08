@@ -1,0 +1,21 @@
+[package]
+name = "rchost"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+anyhow = "1.0"
+borsh = "0.10"
+image = { version = "0.24", features = ["webp-encoder"] }
+log = "0.4"
+tokio = { version = "1.26", features = ["full"] }
+
+camera = { path = "../camera" }
+common = { path = "../common" }
+encoder = { path = "../encoder" }
+muskrat = { path = "../muskrat" }
+phototaker = { path = "../phototaker" }
+proto = { path = "../proto" }
+radio = { path = "../radio" }
+ros = { path = "../ros" }
+ws = { path = "../ws" }

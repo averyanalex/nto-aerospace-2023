@@ -1,0 +1,14 @@
+[package]
+name = "decoder"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+anyhow = "1.0"
+crossbeam = { version = "0.8", features = ["crossbeam-channel"] }
+dav1d = "0.9.3"
+dcv-color-primitives = "0.5.2"
+futures = "0.3"
+image = { version = "0.24" }
+log = "0.4"
+tokio = { version = "1.26", features = ["full"] }

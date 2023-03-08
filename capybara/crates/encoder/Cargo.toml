@@ -1,0 +1,13 @@
+[package]
+name = "encoder"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+anyhow = "1.0"
+crossbeam = { version = "0.8", features = ["crossbeam-channel"] }
+futures = "0.3"
+image = { version = "0.24" }
+log = "0.4"
+rav1e = "0.6.3"
+tokio = { version = "1.26", features = ["full"] }

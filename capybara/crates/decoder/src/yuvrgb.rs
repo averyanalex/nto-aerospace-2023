@@ -1,6 +1,7 @@
 use anyhow::Result;
-use dcp::{ColorSpace, ImageFormat, PixelFormat};
 use dcv_color_primitives as dcp;
+
+use dcp::{ColorSpace, ImageFormat, PixelFormat};
 
 const YUV_FORMAT: ImageFormat = ImageFormat {
     pixel_format: PixelFormat::I444,

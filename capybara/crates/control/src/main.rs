@@ -16,16 +16,13 @@ use tokio::sync::{
 use tokio::task::JoinSet;
 use tokio_tungstenite::{connect_async, tungstenite::protocol::Message};
 
-use capybara::decoder;
-use capybara::photosaver;
-use capybara::Velocity;
-use capybara::{PacketToMaster, PacketToSlave};
+use decoder::run_decoder;
+use photosaver::run_photosaver;
+use proto::Velocity;
+use proto::{PacketToMaster, PacketToSlave};
 
 #[tokio::main]
 async fn main() -> Result<()> {
-    env_logger::Builder::from_env(env_logger::Env::default().default_filter_or("info")).init();
-    log_panics::init();
-
     let (bevyimage_tx, bevyimage_rx) = tokio::sync::mpsc::channel(1);
     let (movecmd_tx, mut movecmd_rx) = tokio::sync::mpsc::channel::<MoveCommand>(4);
 
@@ -42,8 +39,8 @@ async fn main() -> Result<()> {
     let (image_tx, mut image_rx) = broadcast::channel(1);
 
     let mut tasks = JoinSet::<Result<()>>::new();
-    tasks.spawn(decoder::run_decoder(encoder_rx, image_tx));
-    tasks.spawn(photosaver::run_photosaver(photo_data_rx));
+    tasks.spawn(run_decoder(encoder_rx, image_tx));
+    tasks.spawn(run_photosaver(photo_data_rx));
 
     tasks.spawn(async move {
         let mut linear = 0.0;

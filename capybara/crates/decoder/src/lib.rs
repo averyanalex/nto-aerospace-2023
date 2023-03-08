@@ -1,4 +1,3 @@
-use crate::yuvrgb::yuv_to_bgra;
 use anyhow::{bail, Result};
 use crossbeam::channel::unbounded;
 use dav1d::{Decoder, Error::Again, Error::InvalidArgument, PlanarImageComponent};
@@ -7,6 +6,8 @@ use image::RgbImage;
 use log::*;
 use tokio::sync::broadcast;
 use tokio::task::{spawn, spawn_blocking, JoinHandle};
+
+mod yuvrgb;
 
 pub async fn run_decoder(
     mut data_rx: broadcast::Receiver<Vec<u8>>,
@@ -44,7 +45,7 @@ pub async fn run_decoder(
                 picture.stride(PlanarImageComponent::V) as usize,
             ];
 
-            let rgb_buf = yuv_to_bgra(&src_buf, strides)?;
+            let rgb_buf = yuvrgb::yuv_to_bgra(&src_buf, strides)?;
 
             let image = match RgbImage::from_raw(640, 480, rgb_buf) {
                 Some(i) => i,

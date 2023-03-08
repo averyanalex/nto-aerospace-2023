@@ -5,28 +5,28 @@ use log::*;
 use tokio::sync::{broadcast, mpsc, watch};
 use tokio::task::JoinSet;
 
-use capybara::camera;
-use capybara::encoder;
-use capybara::muskrat;
-use capybara::phototaker;
-use capybara::radio;
-use capybara::ros;
-use capybara::servo;
-use capybara::wait_tasks;
-use capybara::ws;
-use capybara::{Odometry, Velocity};
-use capybara::{PacketToMaster, PacketToSlave};
+use camera::run_camera;
+use common::wait_tasks;
+use ws::run_ws;
+use proto::{Odometry, Velocity};
+use proto::{PacketToMaster, PacketToSlave};
+use encoder::run_encoder;
+use muskrat::run_muskrat;
+use muskrat::servo::run_servo;
+use phototaker::run_phototaker;
+use radio::run_radio;
+use ros::run_ros;
+use common::init_log;
 
 #[tokio::main]
 async fn main() -> Result<()> {
-    env_logger::Builder::from_env(env_logger::Env::default().default_filter_or("info")).init();
-    log_panics::init();
+    init_log();
 
     let (set_raw_angle_tx, set_raw_angle_rx) = mpsc::channel::<f64>(1);
     let (angle_tx, angle_rx) = watch::channel(0.0);
     let (camera_tx, camera_rx) = watch::channel(RgbImage::new(640, 480));
     let (photo_request_tx, photo_request_rx) = mpsc::channel(1);
-    let (button_tx, _) = broadcast::channel(1);
+    let (button_tx, mut button_rx) = broadcast::channel(1);
     let (photo_data_tx, mut photo_data_rx) = broadcast::channel(4);
     let (encoder_tx, mut encoder_rx) = broadcast::channel(32);
 
@@ -47,22 +47,22 @@ async fn main() -> Result<()> {
     });
 
     let mut tasks = JoinSet::<Result<()>>::new();
-    tasks.spawn(ros::run_ros(odometry_tx, velocity_rx));
-    tasks.spawn(muskrat::run_muskrat(set_raw_angle_rx, button_tx));
-    tasks.spawn(servo::run_servo(angle_rx, set_raw_angle_tx));
-    tasks.spawn(ws::run_ws(radio_up_tx_video.clone(), radio_down_tx.clone()));
-    tasks.spawn(radio::run_radio(
+    tasks.spawn(run_ros(odometry_tx, velocity_rx));
+    tasks.spawn(run_muskrat(set_raw_angle_rx, button_tx));
+    tasks.spawn(run_servo(angle_rx, set_raw_angle_tx));
+    tasks.spawn(run_ws(radio_up_tx_video.clone(), radio_down_tx.clone()));
+    tasks.spawn(run_radio(
         "/dev/serial/by-path/platform-fd500000.pcie-pci-0000:01:00.0-usb-0:1.2:1.0-port0",
         radio_up_rx,
         radio_down_tx,
     ));
-    tasks.spawn(encoder::run_encoder(camera_rx, encoder_tx));
-    tasks.spawn(phototaker::run_phototaker(
+    tasks.spawn(run_encoder(camera_rx, encoder_tx));
+    tasks.spawn(run_phototaker(
         photo_request_rx,
         camera_tx.subscribe(),
         photo_data_tx,
     ));
-    tasks.spawn(camera::run_camera(camera_tx));
+    tasks.spawn(run_camera(camera_tx));
 
     tasks.spawn(async move {
         loop {
@@ -132,6 +132,9 @@ async fn main() -> Result<()> {
             let _ = radio_up_tx_photo.send(pkt.try_to_vec()?);
         }
     });
+
+    let _ = button_rx.recv().await;
+    info!("button pressed");
 
     wait_tasks(tasks).await;
     Ok(())

@@ -2,6 +2,7 @@ use anyhow::Result;
 // use log::*;
 use tokio::sync::{broadcast, mpsc};
 use tokio_serial::SerialPortBuilderExt;
+pub mod servo;
 
 pub async fn run_muskrat(
     mut _set_angle_rx: mpsc::Receiver<f64>,

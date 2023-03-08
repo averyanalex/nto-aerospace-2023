@@ -13,7 +13,10 @@
     flake-utils.lib.eachDefaultSystem (system:
       let
         overlays = [ (import rust-overlay) ros.overlays.default ];
-        pkgs = import nixpkgs { inherit system overlays; };
+        pkgs = import nixpkgs {
+          inherit overlays;
+          system = "aarch64-linux";
+        };
         rustVersion = pkgs.rust-bin.fromRustupToolchainFile ./rust-toolchain.toml;
         inherit (import-cargo.builders) importCargo;
 
@@ -83,6 +86,7 @@
             rustVersion
           ] ++ buildInputs ++ nativeBuildInputs;
           LD_LIBRARY_PATH = pkgs.lib.makeLibraryPath buildInputs;
+          RUSTFLAGS = "-C target-cpu=cortex-a72";
           ROSRUST_MSG_PATH = "${pkgs.rosPackages.noetic.std-msgs}/share/std_msgs:${pkgs.rosPackages.noetic.nav-msgs}/share/nav_msgs:${pkgs.rosPackages.noetic.geometry-msgs}/share/geometry_msgs";
         };
       }

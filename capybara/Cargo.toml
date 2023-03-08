@@ -1,43 +1,6 @@
-[package]
-name = "capybara"
-version = "0.1.0"
-edition = "2021"
-
-[dependencies]
-# async
-tokio = { version = "1.26", features = ["full"] }
-futures = "0.3"
-
-# images
-image = { version = "0.24", features = ["webp-encoder"] }
-rscam = "0.5.5"
-
-# av1
-rav1e = "0.6.3"
-dav1d = "0.9.3"
-dcv-color-primitives = "0.5.2"
-
-# websockets
-tokio-tungstenite = "0.18"
-axum = { version = "0.6", features = ["ws"] }
-
-# logging
-log = "0.4"
-env_logger = "0.10"
-log-panics = { version = "2", features = ["with-backtrace"] }
-
-# misc
-anyhow = "1.0"
-borsh = "0.10"
-crossbeam = { version = "0.8", features = ["crossbeam-channel"] }
-rand = "0.8"
-tokio-serial = "5.4.4"
-
-# ros
-rosrust = { git = "https://github.com/adnanademovic/rosrust.git" }
-rosrust_msg = { git = "https://github.com/adnanademovic/rosrust.git" }
-
-bevy = { version = "0.10", features = ["dynamic_linking"] }
+[workspace]
+resolver = "2"
+members = ["crates/*"]
 
 [profile.dev]
 opt-level = 1

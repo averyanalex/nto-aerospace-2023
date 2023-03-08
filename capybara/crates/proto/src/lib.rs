@@ -1,19 +1,4 @@
-pub mod camera;
-pub mod decoder;
-pub mod encoder;
-pub mod muskrat;
-pub mod photosaver;
-pub mod phototaker;
-pub mod radio;
-pub mod ros;
-pub mod servo;
-pub mod ws;
-pub mod yuvrgb;
-
-use anyhow::Result;
 use borsh::{BorshDeserialize, BorshSerialize};
-use log::*;
-use tokio::task::JoinSet;
 
 #[derive(BorshSerialize, BorshDeserialize, PartialEq, Debug, Clone)]
 pub struct Odometry {
@@ -46,13 +31,4 @@ pub enum PacketToMaster {
     Video(Vec<u8>),
     Photo(Vec<u8>),
     Odometry(Odometry),
-}
-
-pub async fn wait_tasks(mut tasks: JoinSet<Result<()>>) {
-    while let Some(res) = tasks.join_next().await {
-        match res {
-            Ok(_) => error!("task exited"),
-            Err(e) => error!("task failed: {e}"),
-        }
-    }
 }
