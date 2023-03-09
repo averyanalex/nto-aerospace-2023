@@ -143,8 +143,10 @@ async fn main() -> Result<()> {
 
     tasks.spawn(async move {
         use AutopilotStage::*;
-        let mut stage = Arc::new(Mutex::new(Init));
+        info!("Started autopilot");
+        let stage = Arc::new(Mutex::new(Init));
         while camera_rx.changed().await.is_ok() {
+            info!("Autopilot image received");
             let img = (*camera_rx.borrow()).clone();
             let (w, h) = (img.width() as i32, img.height() as i32);
             let img_vec = img.as_raw().clone();
@@ -155,6 +157,7 @@ async fn main() -> Result<()> {
                 let circle = get_circle_pos(h, w, img_vec);
                 let mut stage = (*stage_clone.lock().unwrap()).clone();
                 if let Ok(circle) = circle {
+                    info!("Circle found: {:?}", circle);
                     if let Some(Circle { x, y, r }) = circle {
                         match stage {
                             Init => {
@@ -198,6 +201,7 @@ async fn main() -> Result<()> {
                 });
             }
         }
+        info!("Exited autopilot");
         Ok(())
     });
 
@@ -205,6 +209,7 @@ async fn main() -> Result<()> {
     Ok(())
 }
 
+#[derive(Debug)]
 struct Circle {
     x: f32,
     y: f32,

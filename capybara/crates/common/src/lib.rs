@@ -25,6 +25,7 @@ pub async fn drive_distance(
     odometry_rx: &mut watch::Receiver<proto::Odometry>,
     velocity_tx: &watch::Sender<proto::Velocity>,
 ) -> Result<()> {
+    debug!("Driving distance: {}", distance);
     let last_pos = (*odometry_rx.borrow()).clone();
 
     if velocity_tx
