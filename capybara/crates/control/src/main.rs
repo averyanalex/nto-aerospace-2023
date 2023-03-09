@@ -45,31 +45,39 @@ async fn main() -> Result<()> {
     tasks.spawn(async move {
         let mut linear = 0.0;
         let mut angular = 0.0;
+        let mut arm = 2400.0;
         loop {
             let movecmd: MoveCommand = match movecmd_rx.recv().await {
                 Some(mc) => mc,
                 None => return Ok(()),
             };
-            match movecmd.drive {
-                Some(drive) => match drive {
+            if let Some(drive) = movecmd.drive {
+                match drive {
                     Drive::Forward => linear = 0.05,
                     Drive::Stop => linear = 0.0,
                     Drive::Backward => linear = -0.05,
-                },
-                None => {}
+                }
             }
-            match movecmd.rotate {
-                Some(rotate) => match rotate {
+            if let Some(rotate) = movecmd.rotate {
+                match rotate {
                     Rotate::Left => angular = 0.1,
                     Rotate::Stop => angular = 0.0,
                     Rotate::Right => angular = -0.1,
-                },
-                None => {}
+                }
+            }
+            if let Some(a) = movecmd.arm {
+                match a {
+                    Arm::Up => arm = 2300.0,
+                    Arm::Down => arm = 2500.0,
+                }
             }
             let velocity_cmd = Velocity { linear, angular };
             let pkt = PacketToSlave::SetVelocity(velocity_cmd);
             let msg = Message::Binary(pkt.try_to_vec()?);
             if sender.send(msg).await.is_err() {
+                return Ok(());
+            };
+            if sender.send(Message::Binary(PacketToSlave::SetAngle(arm).try_to_vec()?)).await.is_err() {
                 return Ok(());
             };
         }
@@ -145,6 +153,7 @@ struct RemoteControl {
 struct MoveCommand {
     drive: Option<Drive>,
     rotate: Option<Rotate>,
+    arm: Option<Arm>,
 }
 
 enum Drive {
@@ -157,6 +166,11 @@ enum Rotate {
     Left,
     Right,
     Stop,
+}
+
+enum Arm {
+    Up,
+    Down,
 }
 
 fn setup(mut commands: Commands, mut images: ResMut<Assets<Image>>, mut rc: ResMut<RemoteControl>) {
@@ -219,6 +233,8 @@ fn move_system(rc: Res<RemoteControl>, key_input: Res<Input<KeyCode>>) {
             KeyCode::S => move_command.drive = Some(Drive::Backward),
             KeyCode::A => move_command.rotate = Some(Rotate::Left),
             KeyCode::D => move_command.rotate = Some(Rotate::Right),
+            KeyCode::Q => move_command.arm = Some(Arm::Up),
+            KeyCode::E => move_command.arm = Some(Arm::Down),
             _ => {}
         }
     }
@@ -229,7 +245,7 @@ fn move_system(rc: Res<RemoteControl>, key_input: Res<Input<KeyCode>>) {
             _ => {}
         }
     }
-    if move_command.drive.is_some() || move_command.rotate.is_some() {
+    if move_command.drive.is_some() || move_command.rotate.is_some() || move_command.arm.is_some() {
         if let Err(err) = rc.tx.blocking_send(move_command) {
             warn!("Can't send MoveCommand: {}", err); // TODO: just ignore it?
         }
