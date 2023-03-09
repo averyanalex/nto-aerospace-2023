@@ -11,6 +11,10 @@ void setup() {
   Serial.begin(115200);
 }
 
+union ArrayToInteger {
+  byte array[4];
+  uint32_t integer;
+};
 
 void loop() {
   if (!digitalRead(BUTTON_PIN)) {
@@ -21,10 +25,11 @@ void loop() {
   }
 
   if (Serial.available()) {
-//    int angle = Serial.parseInt();
-//    Serial.println(angle);
-//    if (angle != 0) {
-//      claw.writeMicroseconds(angle);
-//    }
+    byte buf[5];
+    Serial.readBytes(buf, 5);
+    ArrayToInteger converter = {buf[1], buf[2], buf[3], buf[4]};
+    if (buf[0] == 0x3) {
+      claw.writeMicroseconds(converter.integer);
+    }
   }
 }
