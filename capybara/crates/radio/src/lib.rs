@@ -15,11 +15,11 @@ use common::wait_tasks;
 const GET_CONFIG_CMD: [u8; 3] = [0xAA, 0xFA, 0x01];
 const SET_CONFIG_CMD: [u8; 18] = [
     0xAA, 0xFA, 0x03, // set config command
-    22,   // RF Channel
+    7,   // RF Channel
     1,    // 433 MHz RF Band
     5,    // 19200 RF Rate
     7,    // +20 dBm RF Power
-    4,    // 14400 Serial transmission rate
+    5,    // 19200 Serial transmission rate
     2,    // 8 bits data bits
     1,    // 1 bits stop bits
     1,    // no parity
@@ -65,7 +65,7 @@ pub async fn run_radio(
     }
 
     let port = Arc::new(Mutex::new(
-        tokio_serial::new(port_path, 14400).open_native_async()?,
+        tokio_serial::new(port_path, 19200).open_native_async()?,
     ));
 
     port.lock().await.set_exclusive(true)?;
