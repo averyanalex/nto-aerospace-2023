@@ -24,9 +24,9 @@ use proto::{PacketToMaster, PacketToSlave};
 #[tokio::main]
 async fn main() -> Result<()> {
     let (bevyimage_tx, bevyimage_rx) = tokio::sync::mpsc::channel(1);
-    let (movecmd_tx, mut movecmd_rx) = tokio::sync::mpsc::channel::<MoveCommand>(4);
+    let (movecmd_tx, mut movecmd_rx) = tokio::sync::mpsc::channel::<CommandFromUI>(4);
 
-    let ws_stream = match connect_async("ws://10.8.0.2:8264").await {
+    let ws_stream = match connect_async("ws://10.8.0.3:8264").await {
         Ok((stream, _)) => stream,
         Err(_) => {
             return Ok(());
@@ -47,7 +47,7 @@ async fn main() -> Result<()> {
         let mut angular = 0.0;
         let mut arm = 2400.0;
         loop {
-            let movecmd: MoveCommand = match movecmd_rx.recv().await {
+            let movecmd: CommandFromUI = match movecmd_rx.recv().await {
                 Some(mc) => mc,
                 None => return Ok(()),
             };
@@ -71,13 +71,27 @@ async fn main() -> Result<()> {
                     Arm::Down => arm = 2500.0,
                 }
             }
+            match movecmd.photo {
+                Some(_) => {
+                    let pkt = PacketToSlave::TakePhoto;
+                    let msg = Message::Binary(pkt.try_to_vec()?);
+                    if sender.send(msg).await.is_err() {
+                        return Ok(());
+                    };
+                }
+                None => {}
+            }
             let velocity_cmd = Velocity { linear, angular };
             let pkt = PacketToSlave::SetVelocity(velocity_cmd);
             let msg = Message::Binary(pkt.try_to_vec()?);
             if sender.send(msg).await.is_err() {
                 return Ok(());
             };
-            if sender.send(Message::Binary(PacketToSlave::SetAngle(arm).try_to_vec()?)).await.is_err() {
+            if sender
+                .send(Message::Binary(PacketToSlave::SetAngle(arm).try_to_vec()?))
+                .await
+                .is_err()
+            {
                 return Ok(());
             };
         }
@@ -145,15 +159,16 @@ async fn main() -> Result<()> {
 #[derive(Resource)]
 struct RemoteControl {
     rx: Receiver<Vec<u8>>,
-    tx: Sender<MoveCommand>,
+    tx: Sender<CommandFromUI>,
     image_handle: Option<Handle<Image>>,
 }
 
 #[derive(Default)]
-struct MoveCommand {
+struct CommandFromUI {
     drive: Option<Drive>,
     rotate: Option<Rotate>,
     arm: Option<Arm>,
+    photo: Option<()>,
 }
 
 enum Drive {
@@ -226,7 +241,7 @@ fn draw_system(mut rc: ResMut<RemoteControl>, mut images: ResMut<Assets<Image>>)
 }
 
 fn move_system(rc: Res<RemoteControl>, key_input: Res<Input<KeyCode>>) {
-    let mut move_command = MoveCommand::default();
+    let mut move_command = CommandFromUI::default();
     for key in key_input.get_just_pressed() {
         match key {
             KeyCode::W => move_command.drive = Some(Drive::Forward),
@@ -235,6 +250,7 @@ fn move_system(rc: Res<RemoteControl>, key_input: Res<Input<KeyCode>>) {
             KeyCode::D => move_command.rotate = Some(Rotate::Right),
             KeyCode::Q => move_command.arm = Some(Arm::Up),
             KeyCode::E => move_command.arm = Some(Arm::Down),
+            KeyCode::P => move_command.photo = Some(()),
             _ => {}
         }
     }
@@ -245,7 +261,11 @@ fn move_system(rc: Res<RemoteControl>, key_input: Res<Input<KeyCode>>) {
             _ => {}
         }
     }
-    if move_command.drive.is_some() || move_command.rotate.is_some() || move_command.arm.is_some() {
+    if move_command.drive.is_some()
+        || move_command.rotate.is_some()
+        || move_command.arm.is_some()
+        || move_command.photo.is_some()
+    {
         if let Err(err) = rc.tx.blocking_send(move_command) {
             warn!("Can't send MoveCommand: {}", err); // TODO: just ignore it?
         }
