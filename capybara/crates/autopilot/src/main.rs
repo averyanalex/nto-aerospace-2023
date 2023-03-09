@@ -174,7 +174,7 @@ async fn main() -> Result<()> {
                         match stage {
                             Init => {
                                 vy = 0.05;
-                                return (vx, vy, false)
+                                return (vx, vy, false);
                             }
                             Driving => {
                                 vy = 0.0;
@@ -182,12 +182,12 @@ async fn main() -> Result<()> {
                                 stage = Blindly;
                                 return (vx, vy, true);
                             }
-                            Blindly => {},
+                            Blindly => {}
                             _ => {}
                         }
                     }
                 }
-                debug!("{vx} {vy} {stage:?}");
+                info!("{vx} {vy} {stage:?}");
                 *stage_clone.lock().unwrap() = stage;
                 (0.0, 0.0, false)
             })
@@ -260,7 +260,7 @@ fn get_circle_pos(h: i32, w: i32, mut vec: Vec<u8>) -> Result<Option<Circle>> {
     let mut blurred = Mat::default();
     imgproc::gaussian_blur(&frame, &mut blurred, core::Size::new(11, 11), 0., 0., 0)?;
     let mut hsv = Mat::default();
-    imgproc::cvt_color(&frame, &mut hsv, imgproc::COLOR_RGB2HSV, 0)?;
+    imgproc::cvt_color(&blurred, &mut hsv, imgproc::COLOR_RGB2HSV, 0)?;
     let mut a = Mat::default();
     core::in_range(
         &hsv,

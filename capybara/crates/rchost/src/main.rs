@@ -6,17 +6,17 @@ use tokio::sync::{broadcast, mpsc, watch};
 use tokio::task::JoinSet;
 
 use camera::run_camera;
+use common::init_log;
 use common::wait_tasks;
-use ws::run_ws;
-use proto::{Odometry, Velocity};
-use proto::{PacketToMaster, PacketToSlave};
 use encoder::run_encoder;
 use muskrat::run_muskrat;
 use muskrat::servo::run_servo;
 use phototaker::run_phototaker;
+use proto::{Odometry, Velocity};
+use proto::{PacketToMaster, PacketToSlave};
 use radio::run_radio;
 use ros::run_ros;
-use common::init_log;
+use ws::run_ws;
 
 #[tokio::main]
 async fn main() -> Result<()> {
