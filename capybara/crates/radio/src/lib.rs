@@ -15,15 +15,15 @@ use common::wait_tasks;
 const GET_CONFIG_CMD: [u8; 3] = [0xAA, 0xFA, 0x01];
 const SET_CONFIG_CMD: [u8; 18] = [
     0xAA, 0xFA, 0x03, // set config command
-    7,    // RF Channel
+    22,   // RF Channel
     1,    // 433 MHz RF Band
-    8,    // 115200 RF Rate
+    5,    // 19200 RF Rate
     7,    // +20 dBm RF Power
-    7,    // 57600 Serial transmission rate
+    4,    // 14400 Serial transmission rate
     2,    // 8 bits data bits
     1,    // 1 bits stop bits
     1,    // no parity
-    0x22, 0xB4, 0xE6, 0x21, // NET ID
+    0x00, 0x00, 0x00, 0x00, // NET ID
     0x00, 0x00, // NODE ID
     0x0A, // end of command
 ];
@@ -65,7 +65,7 @@ pub async fn run_radio(
     }
 
     let port = Arc::new(Mutex::new(
-        tokio_serial::new(port_path, 57600).open_native_async()?,
+        tokio_serial::new(port_path, 14400).open_native_async()?,
     ));
 
     port.lock().await.set_exclusive(true)?;
@@ -93,25 +93,24 @@ pub async fn run_radio(
                 Err(_) => return Ok(()),
             };
             debug!("sending {} bytes to radio", data_to_send.len());
-            port.lock()
-                .await
-                .write_u32(data_to_send.len() as u32)
-                .await?;
-            port.lock().await.write_all(&data_to_send).await?;
+            let mut p = port.lock().await;
+            p.write_u32(data_to_send.len() as u32).await?;
+            p.write_all(&data_to_send).await?;
+            sleep(Duration::from_millis(20)).await;
         }
     });
 
     tasks.spawn(async move {
         loop {
-            if rec_port.lock().await.bytes_to_read()? > 0 {
-                let buf_len = rec_port.lock().await.read_u32().await?;
+            let mut p = rec_port.lock().await;
+            if p.bytes_to_read()? > 0 {
+                let buf_len = p.read_u32().await?;
                 let mut buf: Vec<u8> = vec![0; buf_len as usize];
                 debug!("receiving {} bytes from radio", buf_len);
-                rec_port.lock().await.read_exact(&mut buf).await?;
+                p.read_exact(&mut buf).await?;
                 let _ = receive_tx.send(buf);
-            } else {
-                sleep(Duration::from_millis(20)).await;
             }
+            sleep(Duration::from_millis(20)).await;
         }
     });
 

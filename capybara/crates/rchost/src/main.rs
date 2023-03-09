@@ -23,7 +23,7 @@ async fn main() -> Result<()> {
     init_log();
 
     let (set_raw_angle_tx, set_raw_angle_rx) = mpsc::channel::<f64>(1);
-    let (angle_tx, angle_rx) = watch::channel(0.0);
+    let (angle_tx, angle_rx) = watch::channel(2390.0);
     let (camera_tx, camera_rx) = watch::channel(RgbImage::new(640, 480));
     let (photo_request_tx, photo_request_rx) = mpsc::channel(1);
     let (button_tx, mut button_rx) = broadcast::channel(1);

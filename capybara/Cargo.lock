@@ -3511,6 +3511,8 @@ name = "muskrat"
 version = "0.1.0"
 dependencies = [
  "anyhow",
+ "common",
+ "log 0.4.17",
  "tokio",
  "tokio-serial",
 ]

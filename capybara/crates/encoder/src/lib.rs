@@ -17,8 +17,8 @@ pub async fn run_encoder(
 
     // Basic settings
     enc.time_base = Rational { num: 1, den: 5 }; // 5 FPS
-    enc.width = 640;
-    enc.height = 480;
+    enc.width = 320;
+    enc.height = 240;
     enc.chroma_sampling = ChromaSampling::Cs444;
 
     // Raspberry Pi
@@ -26,8 +26,8 @@ pub async fn run_encoder(
     enc.tiles = 4; // 4 cpu
 
     // Low birate
-    enc.bitrate = 50;
-    enc.min_quantizer = 165;
+    enc.bitrate = 30;
+    enc.min_quantizer = 180;
 
     // Low latency
     enc.speed_settings.rdo_lookahead_frames = 1;
@@ -38,16 +38,13 @@ pub async fn run_encoder(
 
     let (frame_tx, frame_rx) = unbounded();
     let frame_task: JoinHandle<Result<(), Error>> = spawn(async move {
-        let mut send_this_time = true;
         while cam_rx.changed().await.is_ok() {
             let img = (*cam_rx.borrow()).clone();
-            if send_this_time {
-                if frame_tx.send(img).is_err() {
-                    break;
-                }
-                send_this_time = false;
-            } else {
-                send_this_time = true;
+            let resized = image::DynamicImage::ImageRgb8(img)
+                .resize(320, 240, image::imageops::Lanczos3)
+                .to_rgb8();
+            if frame_tx.send(resized).is_err() {
+                break;
             }
         }
         Ok(())
@@ -83,7 +80,7 @@ pub async fn run_encoder(
             let planes = vec![r_slice, g_slice, b_slice];
             let mut video_frame = ctx.new_frame();
             for (dst, src) in video_frame.planes.iter_mut().zip(planes) {
-                dst.copy_from_raw_u8(&src, 640, 1);
+                dst.copy_from_raw_u8(&src, 320, 1);
             }
 
             // Send frame to encoder
