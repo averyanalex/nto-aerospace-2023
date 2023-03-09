@@ -148,17 +148,17 @@ async fn main() -> Result<()> {
             let img = (*camera_rx.borrow()).clone();
             let (w, h) = (img.width() as i32, img.height() as i32);
             let img_vec = img.as_raw().clone();
-            let stage_clone = stage.clone();
+            let stage_clone = Arc::clone(&stage);
             let (vx, vy, b) = spawn_blocking(move || {
-                let mut vx = 0.;
-                let mut vy = 0.;
+                let mut vx = 0.0f32;
+                let mut vy = 0.0f32;
                 let circle = get_circle_pos(h, w, img_vec);
+                let mut stage = (*stage_clone.lock().unwrap()).clone();
                 if let Ok(circle) = circle {
                     if let Some(Circle { x, y, r }) = circle {
-                        match *stage_clone.lock().unwrap() {
+                        match stage {
                             Init => {
-                                let mut st = stage_clone.lock().unwrap();
-                                *st = Driving
+                                stage = Driving;
                             }
                             Driving => {
                                 vy = (x - 0.8) / 5.0;
@@ -168,7 +168,7 @@ async fn main() -> Result<()> {
                             _ => {}
                         }
                     } else {
-                        match *stage_clone.lock().unwrap() {
+                        match stage {
                             Init => {
                                 vy = 0.05;
                                 return (vx, vy, false)
@@ -176,19 +176,21 @@ async fn main() -> Result<()> {
                             Driving => {
                                 vy = 0.0;
                                 vx = 0.0;
-                                let mut st = stage_clone.lock().unwrap();
-                                *st = Blindly;
+                                stage = Blindly;
                                 return (vx, vy, true);
                             }
+                            Blindly => {},
                             _ => {}
                         }
                     }
                 }
+                debug!("{vx} {vy} {stage:?}");
+                *stage_clone.lock().unwrap() = stage;
                 (0.0, 0.0, false)
             })
             .await?;
             if b {
-                _ = common::drive_distance(0.26, &mut odometry_rx, &velocity_tx);
+                _ = common::drive_distance(0.26, &mut odometry_rx, &velocity_tx).await;
             } else {
                 _ = velocity_tx.send(proto::Velocity {
                     linear: vx as f64,
@@ -209,7 +211,7 @@ struct Circle {
     r: f32,
 }
 
-#[derive(Default)]
+#[derive(Default, Clone, Debug)]
 enum AutopilotStage {
     #[default]
     Init,
