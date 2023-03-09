@@ -8,6 +8,8 @@ use rav1e::prelude::*;
 use tokio::sync::{broadcast, watch};
 use tokio::task::{spawn, spawn_blocking, JoinHandle};
 
+use common::{VIDEO_HEIGHT, VIDEO_WIDTH};
+
 pub async fn run_encoder(
     mut cam_rx: watch::Receiver<RgbImage>,
     data_tx: broadcast::Sender<Vec<u8>>,
@@ -16,9 +18,9 @@ pub async fn run_encoder(
     let mut enc = EncoderConfig::default();
 
     // Basic settings
-    enc.time_base = Rational { num: 1, den: 5 }; // 5 FPS
-    enc.width = 640;
-    enc.height = 480;
+    enc.time_base = Rational { num: 1, den: 10 }; // 10 FPS
+    enc.width = VIDEO_WIDTH as usize;
+    enc.height = VIDEO_HEIGHT as usize;
     enc.chroma_sampling = ChromaSampling::Cs444;
 
     // Raspberry Pi
@@ -38,19 +40,13 @@ pub async fn run_encoder(
 
     let (frame_tx, frame_rx) = unbounded();
     let frame_task: JoinHandle<Result<(), Error>> = spawn(async move {
-        let mut s = true;
         while cam_rx.changed().await.is_ok() {
-            if s {
-                let img = (*cam_rx.borrow()).clone();
-                let resized = image::DynamicImage::ImageRgb8(img)
-                    .resize(640, 480, image::imageops::Nearest)
-                    .to_rgb8();
-                if frame_tx.send(resized).is_err() {
-                    break;
-                }
-                s = false;
-            } else {
-                s = true;
+            let img = (*cam_rx.borrow()).clone();
+            let resized = image::DynamicImage::ImageRgb8(img)
+                .resize(VIDEO_WIDTH, VIDEO_HEIGHT, image::imageops::Triangle)
+                .to_rgb8();
+            if frame_tx.send(resized).is_err() {
+                break;
             }
         }
         Ok(())
@@ -86,7 +82,7 @@ pub async fn run_encoder(
             let planes = vec![r_slice, g_slice, b_slice];
             let mut video_frame = ctx.new_frame();
             for (dst, src) in video_frame.planes.iter_mut().zip(planes) {
-                dst.copy_from_raw_u8(&src, 640, 1);
+                dst.copy_from_raw_u8(&src, VIDEO_WIDTH as usize, 1);
             }
 
             // Send frame to encoder

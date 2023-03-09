@@ -6,6 +6,9 @@ use tokio::task::JoinSet;
 
 use proto;
 
+pub const VIDEO_WIDTH: u32 = 320;
+pub const VIDEO_HEIGHT: u32 = 240;
+
 pub fn init_log() {
     env_logger::Builder::from_env(env_logger::Env::default().default_filter_or("info")).init();
     log_panics::init();

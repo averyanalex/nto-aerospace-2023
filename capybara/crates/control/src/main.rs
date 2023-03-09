@@ -21,6 +21,8 @@ use photosaver::run_photosaver;
 use proto::Velocity;
 use proto::{PacketToMaster, PacketToSlave};
 
+use common::{VIDEO_HEIGHT, VIDEO_WIDTH};
+
 #[tokio::main]
 async fn main() -> Result<()> {
     let (bevyimage_tx, bevyimage_rx) = tokio::sync::mpsc::channel(1);
@@ -190,8 +192,8 @@ enum Arm {
 
 fn setup(mut commands: Commands, mut images: ResMut<Assets<Image>>, mut rc: ResMut<RemoteControl>) {
     let size = Extent3d {
-        width: 640,
-        height: 480,
+        width: VIDEO_WIDTH,
+        height: VIDEO_HEIGHT,
         ..default()
     };
 
@@ -215,7 +217,7 @@ fn setup(mut commands: Commands, mut images: ResMut<Assets<Image>>, mut rc: ResM
     // fill image.data with zeroes
     image.resize(size);
 
-    image.data = Vec::from([255; 640 * 480 * 4]); // test data
+    image.data = Vec::from([255; VIDEO_WIDTH as usize * VIDEO_HEIGHT as usize * 4]); // test data
 
     let image_handle = images.add(image);
 

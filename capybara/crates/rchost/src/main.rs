@@ -14,7 +14,6 @@ use muskrat::servo::run_servo;
 use phototaker::run_phototaker;
 use proto::{Odometry, Velocity};
 use proto::{PacketToMaster, PacketToSlave};
-use radio::run_radio;
 use ros::run_ros;
 use ws::run_ws;
 
@@ -30,7 +29,7 @@ async fn main() -> Result<()> {
     let (photo_data_tx, mut photo_data_rx) = broadcast::channel(4);
     let (encoder_tx, mut encoder_rx) = broadcast::channel(32);
 
-    let (radio_up_tx_video, radio_up_rx) = broadcast::channel(32);
+    let (radio_up_tx_video, _) = broadcast::channel(32);
     let radio_up_tx_photo = radio_up_tx_video.clone();
     let radio_up_tx_odometry = radio_up_tx_video.clone();
 
@@ -51,11 +50,6 @@ async fn main() -> Result<()> {
     tasks.spawn(run_muskrat(set_raw_angle_rx, button_tx));
     tasks.spawn(run_servo(angle_rx, set_raw_angle_tx));
     tasks.spawn(run_ws(radio_up_tx_video.clone(), radio_down_tx.clone()));
-    tasks.spawn(run_radio(
-        "/dev/serial/by-path/platform-fd500000.pcie-pci-0000:01:00.0-usb-0:1.2:1.0-port0",
-        radio_up_rx,
-        radio_down_tx,
-    ));
     tasks.spawn(run_encoder(camera_rx, encoder_tx));
     tasks.spawn(run_phototaker(
         photo_request_rx,

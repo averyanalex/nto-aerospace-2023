@@ -7,6 +7,8 @@ use log::*;
 use tokio::sync::broadcast;
 use tokio::task::{spawn, spawn_blocking, JoinHandle};
 
+use common::{VIDEO_HEIGHT, VIDEO_WIDTH};
+
 mod yuvrgb;
 
 pub async fn run_decoder(
@@ -47,7 +49,7 @@ pub async fn run_decoder(
 
             let rgb_buf = yuvrgb::yuv_to_bgra(&src_buf, strides)?;
 
-            let image = match RgbImage::from_raw(640, 480, rgb_buf) {
+            let image = match RgbImage::from_raw(VIDEO_WIDTH, VIDEO_HEIGHT, rgb_buf) {
                 Some(i) => i,
                 None => bail!("image container too small"),
             };

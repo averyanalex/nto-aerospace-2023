@@ -1697,6 +1697,7 @@ dependencies = [
  "anyhow",
  "bevy",
  "borsh",
+ "common",
  "decoder",
  "futures 0.3.26",
  "image",
@@ -2006,6 +2007,7 @@ name = "decoder"
 version = "0.1.0"
 dependencies = [
  "anyhow",
+ "common",
  "crossbeam",
  "dav1d",
  "dcv-color-primitives",
@@ -2111,6 +2113,7 @@ name = "encoder"
 version = "0.1.0"
 dependencies = [
  "anyhow",
+ "common",
  "crossbeam",
  "futures 0.3.26",
  "image",
@@ -4171,28 +4174,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "radio"
-version = "0.1.0"
-dependencies = [
- "anyhow",
- "common",
- "log 0.4.17",
- "tokio",
- "tokio-serial",
-]
-
-[[package]]
-name = "radiows"
-version = "0.1.0"
-dependencies = [
- "anyhow",
- "common",
- "radio",
- "tokio",
- "ws",
-]
-
-[[package]]
 name = "radsort"
 version = "0.1.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -4324,7 +4305,6 @@ dependencies = [
  "muskrat",
  "phototaker",
  "proto",
- "radio",
  "ros",
  "tokio",
  "ws",
@@ -4756,6 +4736,16 @@ dependencies = [
  "nix 0.24.3",
  "regex 1.7.1",
  "winapi",
+]
+
+[[package]]
+name = "setradio"
+version = "0.1.0"
+dependencies = [
+ "anyhow",
+ "log 0.4.17",
+ "tokio",
+ "tokio-serial",
 ]
 
 [[package]]

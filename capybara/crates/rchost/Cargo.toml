@@ -16,6 +16,5 @@ encoder = { path = "../encoder" }
 muskrat = { path = "../muskrat" }
 phototaker = { path = "../phototaker" }
 proto = { path = "../proto" }
-radio = { path = "../radio" }
 ros = { path = "../ros" }
 ws = { path = "../ws" }
