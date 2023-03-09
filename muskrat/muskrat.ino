@@ -28,7 +28,7 @@ void loop() {
     byte buf[5];
     Serial.readBytes(buf, 5);
     ArrayToInteger converter = {buf[1], buf[2], buf[3], buf[4]};
-    if (buf[0] == 0x3) {
+    if (buf[0] == 0x03) {
       claw.writeMicroseconds(converter.integer);
     }
   }
