@@ -144,54 +144,48 @@ async fn main() -> Result<()> {
     tasks.spawn(async move {
         use AutopilotStage::*;
         info!("Started autopilot");
-        let stage = Arc::new(Mutex::new(Init));
+        let mut stage = Init;
         while camera_rx.changed().await.is_ok() {
             info!("Autopilot image received");
             let img = (*camera_rx.borrow()).clone();
             let (w, h) = (img.width() as i32, img.height() as i32);
             let img_vec = img.as_raw().clone();
-            let stage_clone = Arc::clone(&stage);
-            let (vx, vy, b) = spawn_blocking(move || {
-                let mut vx = 0.0f32;
-                let mut vy = 0.0f32;
-                let circle = get_circle_pos(h, w, img_vec);
-                let mut stage = (*stage_clone.lock().unwrap()).clone();
-                if let Ok(circle) = circle {
-                    info!("Circle found: {:?}", circle);
-                    if let Some(Circle { x, y, r }) = circle {
-                        match stage {
-                            Init => {
-                                stage = Driving;
-                            }
-                            Driving => {
-                                vy = (x - 0.8) / 5.0;
-                                vx = 0.01;
-                                return (vx, vy, false);
-                            }
-                            _ => {}
+            let mut vx = 0.0f32;
+            let mut vy = 0.0f32;
+            let mut b = false;
+            let circle = spawn_blocking(move || get_circle_pos(h, w, img_vec)).await?;
+            if let Ok(circle) = circle {
+                info!("Circle found: {:?}", circle);
+                if let Some(Circle { x, y, r }) = circle {
+                    match stage {
+                        Init => {
+                            stage = Driving;
                         }
-                    } else {
-                        match stage {
-                            Init => {
-                                // vy = 0.05;
-                                return (vx, vy, false);
-                            }
-                            Driving => {
-                                vy = 0.0;
-                                vx = 0.0;
-                                stage = Blindly;
-                                return (vx, vy, true);
-                            }
-                            Blindly => {}
-                            _ => {}
+                        Driving => {
+                            vy = (x - 0.8) / 5.0;
+                            vx = 0.01;
+                            b = false;
                         }
+                        _ => {}
+                    }
+                } else {
+                    match stage {
+                        Init => {
+                            // vy = 0.05;
+                            b = false;
+                        }
+                        Driving => {
+                            vy = 0.0;
+                            vx = 0.0;
+                            stage = Blindly;
+                            b = true;
+                        }
+                        Blindly => {}
+                        _ => {}
                     }
                 }
-                info!("{vx} {vy} {stage:?}");
-                *stage_clone.lock().unwrap() = stage;
-                (0.0, 0.0, false)
-            })
-            .await?;
+            }
+            info!("{vx} {vy} {stage:?}");
             if b {
                 _ = common::drive_distance(0.26, &mut odometry_rx, &velocity_tx).await;
             } else {
