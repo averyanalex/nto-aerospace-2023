@@ -38,8 +38,9 @@ pub async fn run_muskrat(
             };
             let mut p = port.lock().await;
             debug!("sending {} angle", angle);
-            p.write_all(&[0x03]).await?;
-            p.write_u32(angle).await?;
+            // p.write_all(&[0x03]).await?;
+            p.write_all(angle.to_string().as_bytes()).await?;
+            p.write_all(b"\n").await?;
         }
     });
 

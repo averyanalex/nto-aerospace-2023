@@ -264,8 +264,8 @@ fn get_circle_pos(h: i32, w: i32, mut vec: Vec<u8>) -> Result<Option<Circle>> {
     let mut a = Mat::default();
     core::in_range(
         &hsv,
-        &core::Scalar::new(80.0, 200.0, 200.0, 0.0), // TODO: color
-        &core::Scalar::new(120.0, 255.0, 255.0, 0.0),
+        &core::Scalar::new(15.0, 50.0, 50.0, 0.0), // TODO: color
+        &core::Scalar::new(80.0, 255.0, 255.0, 0.0),
         &mut a,
     )?;
     let mut b = Mat::default();
@@ -296,6 +296,7 @@ fn get_circle_pos(h: i32, w: i32, mut vec: Vec<u8>) -> Result<Option<Circle>> {
         imgproc::CHAIN_APPROX_SIMPLE,
         core::Point::default(),
     )?;
+    debug!("{:?}", contours);
     if !contours.is_empty() {
         let max = contours
             .iter()
@@ -312,6 +313,7 @@ fn get_circle_pos(h: i32, w: i32, mut vec: Vec<u8>) -> Result<Option<Circle>> {
         imgproc::min_enclosing_circle(&maxcontour, &mut center, &mut radius)?;
         // imgproc::moments
         let (x, y, r) = (center.x / w as f32, center.y / h as f32, radius / h as f32);
+        debug!("{x} {y} {r}");
         // info!("{} {} {}", x, y, r);
         let mut message = None;
         if r > 0.05 {

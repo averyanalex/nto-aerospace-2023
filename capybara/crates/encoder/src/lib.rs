@@ -17,8 +17,8 @@ pub async fn run_encoder(
 
     // Basic settings
     enc.time_base = Rational { num: 1, den: 5 }; // 5 FPS
-    enc.width = 320;
-    enc.height = 240;
+    enc.width = 640;
+    enc.height = 480;
     enc.chroma_sampling = ChromaSampling::Cs444;
 
     // Raspberry Pi
@@ -27,7 +27,7 @@ pub async fn run_encoder(
 
     // Low birate
     enc.bitrate = 30;
-    enc.min_quantizer = 180;
+    enc.min_quantizer = 230;
 
     // Low latency
     enc.speed_settings.rdo_lookahead_frames = 1;
@@ -38,13 +38,19 @@ pub async fn run_encoder(
 
     let (frame_tx, frame_rx) = unbounded();
     let frame_task: JoinHandle<Result<(), Error>> = spawn(async move {
+        let mut s = true;
         while cam_rx.changed().await.is_ok() {
-            let img = (*cam_rx.borrow()).clone();
-            let resized = image::DynamicImage::ImageRgb8(img)
-                .resize(320, 240, image::imageops::Lanczos3)
-                .to_rgb8();
-            if frame_tx.send(resized).is_err() {
-                break;
+            if s {
+                let img = (*cam_rx.borrow()).clone();
+                let resized = image::DynamicImage::ImageRgb8(img)
+                    .resize(640, 480, image::imageops::Nearest)
+                    .to_rgb8();
+                if frame_tx.send(resized).is_err() {
+                    break;
+                }
+                s = false;
+            } else {
+                s = true;
             }
         }
         Ok(())
@@ -80,7 +86,7 @@ pub async fn run_encoder(
             let planes = vec![r_slice, g_slice, b_slice];
             let mut video_frame = ctx.new_frame();
             for (dst, src) in video_frame.planes.iter_mut().zip(planes) {
-                dst.copy_from_raw_u8(&src, 320, 1);
+                dst.copy_from_raw_u8(&src, 640, 1);
             }
 
             // Send frame to encoder
@@ -101,6 +107,7 @@ pub async fn run_encoder(
             // Receive data from encoder
             match ctx.receive_packet() {
                 Ok(pkt) => {
+                    debug!("sending packet from encoder thread");
                     let _ = data_tx.send(pkt.data);
                 }
                 Err(e) => match e {
