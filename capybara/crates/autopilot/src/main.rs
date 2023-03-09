@@ -138,7 +138,7 @@ async fn main() -> Result<()> {
     //     }
     // });
 
-    let _ = button_rx.recv().await;
+    // let _ = button_rx.recv().await;
     info!("button pressed");
 
     tasks.spawn(async move {
@@ -173,7 +173,7 @@ async fn main() -> Result<()> {
                     } else {
                         match stage {
                             Init => {
-                                vy = 0.05;
+                                // vy = 0.05;
                                 return (vx, vy, false);
                             }
                             Driving => {
