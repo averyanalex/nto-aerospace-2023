@@ -1,19 +1,16 @@
 [package]
-name = "rchost"
+name = "rc"
 version = "0.1.0"
 edition = "2021"
 
 [dependencies]
 anyhow = "1.0"
 borsh = "0.10"
-image = { version = "0.24" }
+image = "0.24"
 log = "0.4"
 tokio = { version = "1.26", features = ["full"] }
 
-camera = { path = "../camera" }
 common = { path = "../common" }
-muskrat = { path = "../muskrat" }
+encoder = { path = "../encoder" }
 proto = { path = "../proto" }
-rc = { path = "../rc" }
-ros = { path = "../ros" }
-ws = { path = "../ws" }
+phototaker = { path = "../phototaker" }

@@ -373,8 +373,10 @@ dependencies = [
  "muskrat",
  "opencv",
  "proto",
+ "rc",
  "ros",
  "tokio",
+ "ws",
 ]
 
 [[package]]
@@ -4292,6 +4294,21 @@ dependencies = [
 ]
 
 [[package]]
+name = "rc"
+version = "0.1.0"
+dependencies = [
+ "anyhow",
+ "borsh",
+ "common",
+ "encoder",
+ "image",
+ "log 0.4.17",
+ "phototaker",
+ "proto",
+ "tokio",
+]
+
+[[package]]
 name = "rchost"
 version = "0.1.0"
 dependencies = [
@@ -4299,12 +4316,11 @@ dependencies = [
  "borsh",
  "camera",
  "common",
- "encoder",
  "image",
  "log 0.4.17",
  "muskrat",
- "phototaker",
  "proto",
+ "rc",
  "ros",
  "tokio",
  "ws",
@@ -4414,6 +4430,7 @@ name = "ros"
 version = "0.1.0"
 dependencies = [
  "anyhow",
+ "common",
  "log 0.4.17",
  "proto",
  "rosrust",

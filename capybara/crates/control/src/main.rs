@@ -28,7 +28,7 @@ async fn main() -> Result<()> {
     let (bevyimage_tx, bevyimage_rx) = tokio::sync::mpsc::channel(1);
     let (movecmd_tx, mut movecmd_rx) = tokio::sync::mpsc::channel::<CommandFromUI>(4);
 
-    let ws_stream = match connect_async("ws://10.8.0.3:8264").await {
+    let ws_stream = match connect_async("ws://127.0.0.1:8264").await {
         Ok((stream, _)) => stream,
         Err(_) => {
             return Ok(());

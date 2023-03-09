@@ -1,11 +1,12 @@
 use anyhow::{bail, Result};
+use log::*;
 use proto::{Odometry, Velocity};
-use tokio::sync::watch;
-use tokio::task::spawn_blocking;
+use tokio::sync::{broadcast, watch};
+use tokio::task::{spawn, spawn_blocking};
 
 pub async fn run_ros(
     odometry_tx: watch::Sender<Odometry>,
-    velocity_rx: watch::Receiver<Velocity>,
+    mut velocity_rx_channel: broadcast::Receiver<Velocity>,
 ) -> Result<()> {
     match rosrust::try_init("capybara") {
         Ok(_) => {}
@@ -32,6 +33,25 @@ pub async fn run_ros(
         Ok(s) => s,
         Err(e) => bail!("can't create subscriber to odom_pose2d: {e}"),
     };
+
+    let (velocity_tx, velocity_rx) = watch::channel(Velocity {
+        linear: 0.0,
+        angular: 0.0,
+    });
+    spawn(async move {
+        loop {
+            match velocity_rx_channel.recv().await {
+                Ok(v) => {
+                    let _ = velocity_tx.send(v);
+                }
+                Err(broadcast::error::RecvError::Lagged(l)) => {
+                    warn!("lagged for {l} velocity");
+                    continue;
+                }
+                Err(broadcast::error::RecvError::Closed) => return,
+            }
+        }
+    });
 
     spawn_blocking(move || {
         while rosrust::is_ok() {

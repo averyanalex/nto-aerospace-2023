@@ -12,3 +12,4 @@ rosrust = { git = "https://github.com/adnanademovic/rosrust.git" }
 rosrust_msg = { git = "https://github.com/adnanademovic/rosrust.git" }
 
 proto = { path = "../proto" }
+common = { path = "../common" }

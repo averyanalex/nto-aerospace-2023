@@ -20,4 +20,5 @@ muskrat = { path = "../muskrat" }
 proto = { path = "../proto" }
 # radio = { path = "../radio" }
 ros = { path = "../ros" }
-# ws = { path = "../ws" }
+ws = { path = "../ws" }
+rc = { path = "../rc" }

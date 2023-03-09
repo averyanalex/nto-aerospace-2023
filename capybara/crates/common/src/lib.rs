@@ -1,7 +1,7 @@
 use anyhow::bail;
 use anyhow::Result;
 use log::*;
-use tokio::sync::watch;
+use tokio::sync::{broadcast, watch};
 use tokio::task::JoinSet;
 
 use proto;
@@ -26,7 +26,7 @@ pub async fn wait_tasks(mut tasks: JoinSet<Result<()>>) {
 pub async fn drive_distance(
     distance: f64,
     odometry_rx: &mut watch::Receiver<proto::Odometry>,
-    velocity_tx: &watch::Sender<proto::Velocity>,
+    velocity_tx: &broadcast::Sender<proto::Velocity>,
 ) -> Result<()> {
     debug!("Driving distance: {}", distance);
     let last_pos = (*odometry_rx.borrow()).clone();
