@@ -29,7 +29,7 @@ pub async fn run_encoder(
 
     // Low birate
     enc.bitrate = 30;
-    enc.min_quantizer = 200;
+    enc.min_quantizer = 160;
 
     // Low latency
     enc.speed_settings.rdo_lookahead_frames = 1;

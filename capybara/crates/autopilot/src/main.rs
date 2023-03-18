@@ -37,6 +37,11 @@ async fn main() -> Result<()> {
     let (velocity_tx, velocity_rx) = broadcast::channel(1);
 
     let mut tasks = JoinSet::<Result<()>>::new();
+    tasks.spawn(run_radio(
+        "/dev/serial/by-path/platform-fd500000.pcie-pci-0000:01:00.0-usb-0:1.2:1.0-port0",
+        radio_up_rx,
+        radio_down_tx,
+    ));
     tasks.spawn(run_muskrat(set_raw_angle_rx, button_tx));
     tasks.spawn(run_servo(angle_rx, set_raw_angle_tx));
     tasks.spawn(run_ws(up_tx.clone(), down_tx));
